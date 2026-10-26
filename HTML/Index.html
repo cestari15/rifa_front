@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NextCell Rifas - Sistema Completo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0a0a0a',
+                        cardBg: '#141414',
+                        cardHover: '#1f1f1f',
+                        neonOrange: '#FF5500',
+                        neonOrangeHover: '#ff6600',
+                        neonGlow: 'rgba(255, 85, 0, 0.4)'
+                    },
+                    boxShadow: {
+                        'neon': '0 0 20px rgba(255, 85, 0, 0.4)',
+                        'neon-lg': '0 0 35px rgba(255, 85, 0, 0.6)',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FF5500;
+            border-radius: 4px;
+        }
+        .glow-border {
+            border: 1px solid rgba(255, 85, 0, 0.3);
+            box-shadow: 0 0 15px rgba(255, 85, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+        .glow-border:hover {
+            border-color: #FF5500;
+            box-shadow: 0 0 25px rgba(255, 85, 0, 0.4);
+        }
+        .pulse-glow {
+            animation: pulseGlow 2s infinite;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 15px rgba(255, 85, 0, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(255, 85, 0, 0.7); }
+            100% { box-shadow: 0 0 15px rgba(255, 85, 0, 0.3); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-neonOrange selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2"></div>
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-40 bg-darkBg/90 backdrop-blur-md border-b border-neutral-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('home')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neonOrange to-amber-600 flex items-center justify-center shadow-neon">
+                    <i class="fa-solid fa-mobile-screen-button text-white text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-black tracking-wider text-white">NEXT<span class="text-neonOrange">CELL</span></span>
+                    <span class="block text-[10px] uppercase tracking-widest text-neutral-400 font-semibold">Rifas Oficiais</span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+                <button onclick="switchTab('home')" id="nav-home" class="text-neonOrange transition flex items-center space-x-2 py-2 border-b-2 border-neonOrange">
+                    <i class="fa-solid fa-house"></i><span>Início</span>
+                </button>
+                <button onclick="switchTab('minhas-cotas')" id="nav-minhas-cotas" class="text-neutral-400 hover:text-white transition flex items-center space-x-2 py-2 border-b-2 border-transparent">
+                    <i class="fa-solid fa-ticket"></i><span>Meus Números</span>
+                </button>
+                <button onclick="switchTab('admin')" id="nav-admin" class="hidden text-neutral-400 hover:text-white transition flex items-center space-x-2 py-2 border-b-2 border-transparent">
+                    <i class="fa-solid fa-gauge-high"></i><span>Painel Admin</span>
+                </button>
+            </nav>
+
+            <!-- User Auth Controls -->
+            <div class="flex items-center space-x-4">
+                <div id="user-guest-view" class="flex items-center space-x-3">
+                    <button onclick="openAuthModal('login')" class="text-sm font-semibold text-white hover:text-neonOrange transition px-4 py-2">
+                        Entrar
+                    </button>
+                    <button onclick="openAuthModal('register')" class="bg-neonOrange hover:bg-neonOrangeHover text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-neon transition transform active:scale-95">
+                        Criar Conta
+                    </button>
+                </div>
+                <div id="user-logged-view" class="hidden items-center space-x-4">
+                    <div class="flex items-center space-x-3 bg-cardBg border border-neutral-800 px-4 py-2 rounded-xl">
+                        <div class="w-8 h-8 rounded-full bg-neonOrange/20 border border-neonOrange flex items-center justify-center text-neonOrange font-bold text-sm" id="user-avatar-initial">
+                            U
+                        </div>
+                        <div class="hidden sm:block text-left">
+                            <p class="text-xs font-bold text-white" id="user-display-name">Nome do Usuário</p>
+                            <p class="text-[10px] text-neutral-400" id="user-display-role">Membro</p>
+                        </div>
+                    </div>
+                    <button onclick="logoutUser()" title="Sair da Conta" class="text-neutral-400 hover:text-red-500 transition p-2 rounded-xl bg-cardBg border border-neutral-800">
+                        <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                    </button>
+                </div>
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden text-neutral-300 hover:text-white p-2">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-cardBg border-b border-neutral-800 px-4 pt-2 pb-4 space-y-2">
+            <button onclick="switchTab('home'); toggleMobileMenu();" class="block w-full text-left py-2 px-3 rounded-lg text-white font-medium hover:bg-neutral-800">
+                <i class="fa-solid fa-house mr-2 text-neonOrange"></i> Início
+            </button>
+            <button onclick="switchTab('minhas-cotas'); toggleMobileMenu();" class="block w-full text-left py-2 px-3 rounded-lg text-white font-medium hover:bg-neutral-800">
+                <i class="fa-solid fa-ticket mr-2 text-neonOrange"></i> Meus Números
+            </button>
+            <button id="mobile-nav-admin" onclick="switchTab('admin'); toggleMobileMenu();" class="hidden block w-full text-left py-2 px-3 rounded-lg text-white font-medium hover:bg-neutral-800">
+                <i class="fa-solid fa-gauge-high mr-2 text-neonOrange"></i> Painel Admin
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Content Container -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- TAB 1: HOME / LANDING PAGE DA RIFA -->
+        <section id="tab-home" class="space-y-12">
+            <!-- Hero Banner & Countdown -->
+            <div class="relative rounded-3xl bg-gradient-to-r from-cardBg via-neutral-900 to-cardBg border border-neutral-800 p-6 sm:p-10 lg:p-12 overflow-hidden glow-border">
+                <div class="absolute -right-20 -top-20 w-96 h-96 bg-neonOrange/15 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+                    <div class="lg:col-span-7 space-y-6">
+                        <div class="inline-flex items-center space-x-2 bg-neonOrange/10 border border-neonOrange/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-neonOrange uppercase tracking-widest">
+                            <i class="fa-solid fa-bolt"></i> <span>Sorteio Autorizado & Oficial</span>
+                        </div>
+                        <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-none" id="hero-raffle-title">
+                            IPHONE 17 PRO MAX <span class="text-transparent bg-clip-text bg-gradient-to-r from-neonOrange to-amber-500">OU PIX DE R$ 10.000</span>
+                        </h1>
+                        <p class="text-neutral-400 text-sm sm:text-base max-w-xl" id="hero-raffle-desc">
+                            Participe da grande rifa oficial da NextCell. Apenas R$ 0,50 por cota! Concorra ao smartphone mais desejado do mercado ou escolha o prêmio em dinheiro direto na sua conta.
+                        </p>
+                        
+                        <!-- Countdown Timer -->
+                        <div class="bg-darkBg/80 border border-neutral-800 p-4 rounded-2xl inline-block w-full sm:w-auto">
+                            <p class="text-xs uppercase font-bold text-neutral-400 mb-2 flex items-center space-x-1">
+                                <i class="fa-regular fa-clock text-neonOrange"></i> <span>O sorteio encerra em:</span>
+                            </p>
+                            <div class="flex items-center space-x-3 text-center">
+                                <div class="bg-cardBg border border-neutral-700 px-3 py-2 rounded-xl min-w-[50px]">
+                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-days">05</span>
+                                    <span class="block text-[9px] text-neutral-400 uppercase">Dias</span>
+                                </div>
+                                <span class="text-xl font-bold text-neutral-500">:</span>
+                                <div class="bg-cardBg border border-neutral-700 px-3 py-2 rounded-xl min-w-[50px]">
+                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-hours">14</span>
+                                    <span class="block text-[9px] text-neutral-400 uppercase">Horas</span>
+                                </div>
+                                <span class="text-xl font-bold text-neutral-500">:</span>
+                                <div class="bg-cardBg border border-neutral-700 px-3 py-2 rounded-xl min-w-[50px]">
+                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-mins">32</span>
+                                    <span class="block text-[9px] text-neutral-400 uppercase">Min</span>
+                                </div>
+                                <span class="text-xl font-bold text-neutral-500">:</span>
+                                <div class="bg-cardBg border border-neutral-700 px-3 py-2 rounded-xl min-w-[50px]">
+                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-secs">45</span>
+                                    <span class="block text-[9px] text-neutral-400 uppercase">Seg</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Raffle Image Card -->
+                    <div class="lg:col-span-5 flex justify-center">
+                        <div class="relative group w-full max-w-sm">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-neonOrange to-amber-600 rounded-3xl blur-xl opacity-40 group-hover:opacity-70 transition duration-500"></div>
+                            <div class="relative bg-cardBg border border-neutral-800 p-6 rounded-3xl shadow-2xl text-center space-y-4">
+                                <span class="absolute top-4 right-4 bg-neonOrange text-white font-extrabold text-xs px-3 py-1 rounded-full shadow-neon">
+                                    APENAS R$ <span id="badge-price">0,50</span>
+                                </span>
+                                <div class="w-full h-64 rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800 flex items-center justify-center relative">
+                                    <img id="raffle-image-display" src="https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=1000&auto=format&fit=crop" alt="Prêmio Principal" class="w-full h-full object-cover transform hover:scale-105 transition duration-500">
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-white" id="card-raffle-title">iPhone 17 Pro Max 512GB</h3>
+                                    <p class="text-xs text-neutral-400 mt-1">Frete grátis para todo o Brasil ou PIX na conta.</p>
+                                </div>
+                                <!-- Progress Bar -->
+                                <div class="space-y-1.5 text-left">
+                                    <div class="flex justify-between text-xs font-semibold">
+                                        <span class="text-neutral-400">Progresso da Rifa</span>
+                                        <span class="text-neonOrange" id="progress-percentage">78%</span>
+                                    </div>
+                                    <div class="w-full bg-neutral-800 h-3 rounded-full overflow-hidden p-0.5 border border-neutral-700">
+                                        <div id="progress-bar-fill" class="bg-gradient-to-r from-amber-600 to-neonOrange h-full rounded-full transition-all duration-500" style="width: 78%"></div>
+                                    </div>
+                                    <p class="text-[11px] text-neutral-400 text-right" id="progress-count-text">7.800 de 10.000 cotas vendidas</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seletor de Cotas e Compra Interativo -->
+            <div class="bg-cardBg border border-neutral-800 rounded-3xl p-6 sm:p-10 glow-border">
+                <div class="max-w-3xl mx-auto space-y-8">
+                    <div class="text-center space-y-2">
+                        <h2 class="text-2xl sm:text-3xl font-black text-white">GARANTA SUA SORTE AGORA</h2>
+                        <p class="text-sm text-neutral-400">Selecione uma quantidade rápida de cotas ou escolha seus números favoritos.</p>
+                    </div>
+
+                    <!-- Quick Selectors -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <button onclick="selectPackage(10)" class="quick-btn bg-darkBg border border-neutral-800 hover:border-neonOrange p-4 rounded-2xl text-center transition group">
+                            <span class="block text-xs text-neutral-400 uppercase font-bold">10 Cotas</span>
+                            <span class="text-xl font-black text-white group-hover:text-neonOrange transition">R$ <span class="pkg-val" data-qty="10">5,00</span></span>
+                        </button>
+                        <button onclick="selectPackage(50)" class="quick-btn bg-darkBg border border-neutral-800 hover:border-neonOrange p-4 rounded-2xl text-center transition group">
+                            <span class="block text-xs text-neutral-400 uppercase font-bold">50 Cotas</span>
+                            <span class="text-xl font-black text-white group-hover:text-neonOrange transition">R$ <span class="pkg-val" data-qty="50">25,00</span></span>
+                            <span class="inline-block mt-1 text-[10px] bg-neonOrange/20 text-neonOrange px-2 py-0.5 rounded font-bold">Mais Popular</span>
+                        </button>
+                        <button onclick="selectPackage(100)" class="quick-btn bg-darkBg border border-neutral-800 hover:border-neonOrange p-4 rounded-2xl text-center transition group">
+                            <span class="block text-xs text-neutral-400 uppercase font-bold">100 Cotas</span>
+                            <span class="text-xl font-black text-white group-hover:text-neonOrange transition">R$ <span class="pkg-val" data-qty="100">50,00</span></span>
+                        </button>
+                        <button onclick="selectPackage(500)" class="quick-btn bg-darkBg border border-neutral-800 hover:border-neonOrange p-4 rounded-2xl text-center transition group">
+                            <span class="block text-xs text-neutral-400 uppercase font-bold">500 Cotas</span>
+                            <span class="text-xl font-black text-white group-hover:text-neonOrange transition">R$ <span class="pkg-val" data-qty="500">250,00</span></span>
+                            <span class="inline-block mt-1 text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded font-bold">Super Chance</span>
+                        </button>
+                    </div>
+
+                    <!-- Custom Quantity Slider / Input -->
+                    <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-bold text-white">Quantidade Personalizada de Cotas:</label>
+                            <input type="number" id="custom-qty-input" min="1" max="1000" value="20" oninput="updateCustomQty(this.value)" class="bg-cardBg border border-neutral-700 text-white text-center font-bold text-lg rounded-xl w-24 py-1.5 focus:outline-none focus:border-neonOrange">
+                        </div>
+                        <input type="range" id="custom-qty-range" min="1" max="500" value="20" oninput="updateCustomSlider(this.value)" class="w-full accent-neonOrange cursor-pointer">
+                    </div>
+
+                    <!-- Summary & Buy Button -->
+                    <div class="bg-gradient-to-br from-neutral-900 to-cardBg border border-neutral-800 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-6">
+                        <div>
+                            <p class="text-xs text-neutral-400 uppercase font-bold">Total a Pagar</p>
+                            <div class="flex items-baseline space-x-2">
+                                <span class="text-3xl sm:text-4xl font-black text-neonOrange" id="checkout-total-price">R$ 10,00</span>
+                                <span class="text-xs text-neutral-400" id="checkout-total-quotas">(20 cotas selecionadas)</span>
+                            </div>
+                        </div>
+                        <button onclick="handleCheckout()" class="w-full sm:w-auto bg-gradient-to-r from-neonOrange to-amber-600 hover:from-neonOrangeHover hover:to-amber-500 text-white font-black text-base px-8 py-4 rounded-2xl shadow-neon-lg transition transform active:scale-95 flex items-center justify-center space-x-3">
+                            <i class="fa-solid fa-cart-shopping text-lg"></i>
+                            <span>PARTICIPAR DO SORTEIO</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Como Funciona / Benefícios -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-cardBg border border-neutral-800 p-6 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-neonOrange/20 border border-neonOrange/40 flex items-center justify-center text-neonOrange text-xl font-bold">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white">100% Seguro e Confiável</h3>
+                    <p class="text-xs text-neutral-400">Sistema transparente com apuração baseada na Loteria Federal e criptografia ponta a ponta.</p>
+                </div>
+                <div class="bg-cardBg border border-neutral-800 p-6 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-neonOrange/20 border border-neonOrange/40 flex items-center justify-center text-neonOrange text-xl font-bold">
+                        <i class="fa-solid fa-bolt-lightning"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white">Aprovação Instantânea PIX</h3>
+                    <p class="text-xs text-neutral-400">Pague via PIX copia e cola ou QR Code e seus números são gerados e confirmados na hora.</p>
+                </div>
+                <div class="bg-cardBg border border-neutral-800 p-6 rounded-3xl space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-neonOrange/20 border border-neonOrange/40 flex items-center justify-center text-neonOrange text-xl font-bold">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white">Sorteios Diários & Prêmios</h3>
+                    <p class="text-xs text-neutral-400">Centenas de ganhadores já premiados em todo o território nacional. Participe e mude de vida!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: MEUS NÚMEROS / ÁREA DO USUÁRIO -->
+        <section id="tab-minhas-cotas" class="hidden space-y-8">
+            <div class="bg-cardBg border border-neutral-800 p-6 sm:p-8 rounded-3xl">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                    <div>
+                        <h2 class="text-2xl font-black text-white">MEUS NÚMEROS & COMPRAS</h2>
+                        <p class="text-xs text-neutral-400">Acompanhe todos os seus bilhetes adquiridos e o status dos sorteios.</p>
+                    </div>
+                    <div class="bg-darkBg border border-neutral-800 px-4 py-2 rounded-xl text-xs font-semibold text-neutral-300">
+                        Usuário: <span class="text-neonOrange" id="user-profile-email">-</span>
+                    </div>
+                </div>
+
+                <!-- Tickets List container -->
+                <div id="user-tickets-container" class="space-y-4">
+                    <!-- Dinamicamente preenchido -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: PAINEL ADMINISTRATIVO (ADMIN) -->
+        <section id="tab-admin" class="hidden space-y-8">
+            <div class="bg-cardBg border border-neutral-800 p-6 sm:p-8 rounded-3xl space-y-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-neutral-800">
+                    <div>
+                        <div class="inline-flex items-center space-x-2 bg-red-500/10 border border-red-500/30 px-3 py-1 rounded-full text-xs font-bold text-red-500 uppercase tracking-widest mb-2">
+                            <i class="fa-solid fa-lock"></i> <span>Área Restrita Administrativa</span>
+                        </div>
+                        <h2 class="text-2xl font-black text-white">PAINEL DE CONTROLE NEXTCELL</h2>
+                    </div>
+                    <button onclick="openNewRaffleModal()" class="bg-neonOrange hover:bg-neonOrangeHover text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-neon transition flex items-center space-x-2">
+                        <i class="fa-solid fa-plus"></i> <span>Criar Nova Rifa</span>
+                    </button>
+                </div>
+
+                <!-- Admin Stats Overview -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-2">
+                        <div class="flex justify-between items-center text-neutral-400">
+                            <span class="text-xs font-bold uppercase">Faturamento Total</span>
+                            <i class="fa-solid fa-wallet text-neonOrange"></i>
+                        </div>
+                        <p class="text-3xl font-black text-white" id="admin-stat-revenue">R$ 0,00</p>
+                        <p class="text-[10px] text-green-500 font-semibold"><i class="fa-solid fa-arrow-trend-up"></i> +12.5% esta semana</p>
+                    </div>
+                    <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-2">
+                        <div class="flex justify-between items-center text-neutral-400">
+                            <span class="text-xs font-bold uppercase">Cotas Vendidas</span>
+                            <i class="fa-solid fa-ticket text-neonOrange"></i>
+                        </div>
+                        <p class="text-3xl font-black text-white" id="admin-stat-tickets">0</p>
+                        <p class="text-[10px] text-neutral-400 font-semibold">Total em todas as rifas</p>
+                    </div>
+                    <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-2">
+                        <div class="flex justify-between items-center text-neutral-400">
+                            <span class="text-xs font-bold uppercase">Usuários Cadastrados</span>
+                            <i class="fa-solid fa-users text-neonOrange"></i>
+                        </div>
+                        <p class="text-3xl font-black text-white" id="admin-stat-users">0</p>
+                        <p class="text-[10px] text-neutral-400 font-semibold">Contas ativas no sistema</p>
+                    </div>
+                </div>
+
+                <!-- Active Raffles Management -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-bullseye text-neonOrange"></i> <span>Gerenciar Rifas Ativas</span>
+                    </h3>
+                    <div id="admin-raffles-list" class="space-y-4">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+
+                <!-- All Sales & Transactions Table -->
+                <div class="space-y-4 pt-6 border-t border-neutral-800">
+                    <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-receipt text-neonOrange"></i> <span>Todas as Vendas Realizadas</span>
+                    </h3>
+                    <div class="overflow-x-auto rounded-2xl border border-neutral-800 bg-darkBg">
+                        <table class="w-full text-left text-sm text-neutral-300">
+                            <thead class="bg-neutral-900 text-xs uppercase text-neutral-400 border-b border-neutral-800">
+                                <tr>
+                                    <th class="px-6 py-4">ID Transação</th>
+                                    <th class="px-6 py-4">Usuário</th>
+                                    <th class="px-6 py-4">Cotas</th>
+                                    <th class="px-6 py-4">Valor</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4">Data</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-sales-table-body" class="divide-y divide-neutral-800 text-xs">
+                                <!-- Preenchido via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-darkBg border-t border-neutral-800 py-8 mt-12 text-center text-xs text-neutral-500 space-y-3">
+        <div class="flex items-center justify-center space-x-2">
+            <span class="w-2 h-2 rounded-full bg-neonOrange"></span>
+            <span class="font-bold text-white tracking-wider">NEXTCELL SISTEMA DE RIFAS &copy; 2026</span>
+        </div>
+        <p>Todos os direitos reservados. Sorteios regulamentados e auditados digitalmente.</p>
+    </footer>
+
+    <!-- MODAL DE AUTENTICAÇÃO (LOGIN / CADASTRO) -->
+    <div id="auth-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-cardBg border border-neutral-800 w-full max-w-md rounded-3xl p-6 sm:p-8 relative shadow-2xl glow-border">
+            <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-2">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <!-- Modal Tabs -->
+            <div class="flex border-b border-neutral-800 mb-6">
+                <button onclick="switchAuthTab('login')" id="auth-tab-login" class="flex-1 pb-3 text-center font-bold text-sm text-neonOrange border-b-2 border-neonOrange transition">Entrar</button>
+                <button onclick="switchAuthTab('register')" id="auth-tab-register" class="flex-1 pb-3 text-center font-bold text-sm text-neutral-400 border-b-2 border-transparent transition">Cadastrar</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">E-mail</label>
+                    <input type="email" id="login-email" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Senha</label>
+                    <input type="password" id="login-password" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-bold py-3.5 rounded-xl shadow-neon transition mt-2">
+                    ACESSAR CONTA
+                </button>
+                <div class="text-center pt-2">
+                    <p class="text-[11px] text-neutral-400">Dica Admin: Use <span class="text-neonOrange font-bold">admin@nextcell.com</span> / <span class="text-neonOrange font-bold">123456</span></p>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="form-register" onsubmit="handleRegisterSubmit(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Nome Completo</label>
+                    <input type="text" id="reg-name" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="Seu Nome">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">E-mail</label>
+                    <input type="email" id="reg-email" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Telefone / WhatsApp</label>
+                    <input type="text" id="reg-phone" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="(11) 99999-9999">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Senha</label>
+                    <input type="password" id="reg-password" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-bold py-3.5 rounded-xl shadow-neon transition mt-2">
+                    CADASTRAR CONTA
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE CHECKOUT / PAGAMENTO PIX SIMULADO -->
+    <div id="checkout-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-cardBg border border-neutral-800 w-full max-w-lg rounded-3xl p-6 sm:p-8 relative shadow-2xl glow-border space-y-6">
+            <button onclick="closeCheckoutModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-2">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 bg-neonOrange/20 border border-neonOrange text-neonOrange rounded-2xl mx-auto flex items-center justify-center text-xl font-bold">
+                    <i class="fa-solid fa-qrcode"></i>
+                </div>
+                <h3 class="text-xl font-black text-white">PAGAMENTO PIX INSTANTÂNEO</h3>
+                <p class="text-xs text-neutral-400">Escaneie o QR Code ou copie a chave PIX abaixo para garantir suas cotas.</p>
+            </div>
+
+            <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl text-center space-y-4">
+                <div class="flex justify-between text-sm font-semibold border-b border-neutral-800 pb-3">
+                    <span class="text-neutral-400">Quantidade de Cotas:</span>
+                    <span class="text-white" id="modal-summary-qty">20 cotas</span>
+                </div>
+                <div class="flex justify-between text-sm font-semibold border-b border-neutral-800 pb-3">
+                    <span class="text-neutral-400">Valor Total:</span>
+                    <span class="text-neonOrange font-black" id="modal-summary-price">R$ 10,00</span>
+                </div>
+                <!-- Fake QR Code Container -->
+                <div class="w-48 h-48 bg-white mx-auto rounded-xl p-3 flex items-center justify-center border-4 border-neonOrange shadow-neon">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=NextCellRifasPIXPayment" alt="PIX QR Code" class="w-full h-full object-contain">
+                </div>
+                <div class="space-y-2">
+                    <input type="text" readonly id="pix-copy-key" value="00020126580014br.gov.bcb.pix0136nextcellrifasoficial2026@gmail.com5204000053039865802BR5925NEXTCELL TECNOLOGIA LTDA6009SAO PAULO62070503***63041C9C" class="w-full bg-cardBg border border-neutral-700 text-neutral-400 text-xs rounded-xl p-2.5 text-center select-all">
+                    <button onclick="copyPixKey()" class="w-full bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold py-2.5 rounded-xl transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-copy text-neonOrange"></i>
+                        <span>COPIAR CÓDIGO PIX COPIA E COLA</span>
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="confirmPaymentSimulation()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-black py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-circle-check text-lg"></i>
+                <span>JÁ REALIZEI O PAGAMENTO (SIMULAR APROVAÇÃO)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DE CRIAR / EDITAR RIFA (ADMIN) -->
+    <div id="raffle-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-cardBg border border-neutral-800 w-full max-w-lg rounded-3xl p-6 sm:p-8 relative shadow-2xl glow-border space-y-6">
+            <button onclick="closeNewRaffleModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-2">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-xl font-black text-white" id="raffle-modal-title">CRIAR NOVA RIFA</h3>
+            
+            <form id="form-raffle" onsubmit="handleRaffleFormSubmit(event)" class="space-y-4">
+                <input type="hidden" id="edit-raffle-id">
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Título do Prêmio</label>
+                    <input type="text" id="rf-title" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="Ex: Moto Honda CG 160 Titan">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Preço por Cota (R$)</label>
+                        <input type="number" step="0.01" id="rf-price" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="0.50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Total de Cotas</label>
+                        <input type="number" id="rf-total" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="10000">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">URL da Imagem</label>
+                    <input type="url" id="rf-image" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="https://images.unsplash.com/...">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Descrição</label>
+                    <textarea id="rf-desc" rows="3" class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="Detalhes do prêmio..."></textarea>
+                </div>
+                <button type="submit" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-bold py-3.5 rounded-xl shadow-neon transition">
+                    SALVAR RIFA
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE SORTEIO DE GANHADOR (ADMIN) -->
+    <div id="draw-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-cardBg border border-neutral-800 w-full max-w-md rounded-3xl p-6 sm:p-8 text-center space-y-6 glow-border relative">
+            <button onclick="closeDrawModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-2">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="w-16 h-16 bg-neonOrange/20 border border-neonOrange text-neonOrange rounded-3xl mx-auto flex items-center justify-center text-3xl animate-bounce">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-2xl font-black text-white">SORTEIO OFICIAL</h3>
+                <p class="text-xs text-neutral-400" id="draw-raffle-name-sub">Sorteando ganhador para a rifa selecionada...</p>
+            </div>
+
+            <div id="draw-spinner-box" class="py-8">
+                <div class="text-4xl font-black text-neonOrange tracking-widest animate-pulse" id="draw-random-number">
+                    #----
+                </div>
+                <p class="text-xs text-neutral-500 mt-2">Girando globo virtual de bilhetes...</p>
+            </div>
+
+            <div id="draw-winner-result" class="hidden bg-darkBg border border-neonOrange/60 p-6 rounded-2xl space-y-3">
+                <span class="bg-neonOrange text-white font-black text-xs px-3 py-1 rounded-full uppercase">Ganhador Oficial Sorteado!</span>
+                <h4 class="text-xl font-bold text-white" id="winner-name-txt">Nome do Vencedor</h4>
+                <p class="text-sm text-neonOrange font-black" id="winner-ticket-txt">Bilhete Sorteado: #04821</p>
+                <p class="text-xs text-neutral-400" id="winner-email-txt">email@usuario.com</p>
+            </div>
+
+            <button id="btn-execute-draw" onclick="executeRandomDraw()" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-black py-4 rounded-xl shadow-neon transition">
+                INICIAR SORTEIO AGORA
+            </button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        /* --- STORAGE & INITIAL DATA --- */
+        const STORAGE_KEYS = {
+            USERS: 'nextcell_users_v1',
+            CURRENT_USER: 'nextcell_current_user_v1',
+            RAFFLES: 'nextcell_raffles_v1',
+            SALES: 'nextcell_sales_v1'
+        };
+
+        const defaultRaffles = [
+            {
+                id: 'rifa-1',
+                title: 'IPHONE 17 PRO MAX 512GB',
+                price: 0.50,
+                total: 10000,
+                sold: 7800,
+                image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=1000&auto=format&fit=crop',
+                description: 'O smartphone mais potente do mundo com 512GB de memória, cor titânio natural.',
+                status: 'Ativa',
+                winner: null
+            },
+            {
+                id: 'rifa-2',
+                title: 'MOTO HONDA CG 160 TITAN 0KM',
+                price: 0.75,
+                total: 8000,
+                sold: 3400,
+                image: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=1000&auto=format&fit=crop',
+                description: 'Moto 0km emplacada, com tanque cheio e documentação por nossa conta.',
+                status: 'Ativa',
+                winner: null
+            }
+        ];
+
+        let currentUser = null;
+        let raffles = [];
+        let sales = [];
+        let users = [];
+
+        let currentCheckoutQty = 20;
+        let currentCheckoutPrice = 10.00;
+        let activeDrawRaffleId = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initStorage();
+            checkAuthState();
+            renderHomeRaffle();
+            startCountdown();
+        });
+
+        function initStorage() {
+            if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+                const adminUser = {
+                    id: 'usr-admin',
+                    name: 'Administrador Master',
+                    email: 'admin@nextcell.com',
+                    phone: '(11) 98888-7777',
+                    password: '123456',
+                    role: 'admin'
+                };
+                users = [adminUser];
+                localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+            } else {
+                users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS));
+            }
+
+            if (!localStorage.getItem(STORAGE_KEYS.RAFFLES)) {
+                raffles = defaultRaffles;
+                localStorage.setItem(STORAGE_KEYS.RAFFLES, JSON.stringify(raffles));
+            } else {
+                raffles = JSON.parse(localStorage.getItem(STORAGE_KEYS.RAFFLES));
+            }
+
+            if (!localStorage.getItem(STORAGE_KEYS.SALES)) {
+                sales = [
+                    {
+                        id: 'TX-99821',
+                        userId: 'usr-admin',
+                        userName: 'Administrador Master',
+                        userEmail: 'admin@nextcell.com',
+                        raffleId: 'rifa-1',
+                        raffleTitle: 'IPHONE 17 PRO MAX 512GB',
+                        qty: 20,
+                        total: 10.00,
+                        numbers: ['01423', '01424', '08921'],
+                        status: 'Aprovado',
+                        date: '26/10/2026 12:45'
+                    }
+                ];
+                localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
+            } else {
+                sales = JSON.parse(localStorage.getItem(STORAGE_KEYS.SALES));
+            }
+
+            const activeSession = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+            if (activeSession) {
+                currentUser = JSON.parse(activeSession);
+            }
+        }
+
+        /* --- AUTH SYSTEM --- */
+        function checkAuthState() {
+            const guestView = document.getElementById('user-guest-view');
+            const loggedView = document.getElementById('user-logged-view');
+            const navAdmin = document.getElementById('nav-admin');
+            const mobileNavAdmin = document.getElementById('mobile-nav-admin');
+
+            if (currentUser) {
+                guestView.classList.add('hidden');
+                guestView.classList.remove('flex');
+                loggedView.classList.remove('hidden');
+                loggedView.classList.add('flex');
+
+                document.getElementById('user-display-name').textContent = currentUser.name;
+                document.getElementById('user-display-role').textContent = currentUser.role === 'admin' ? 'Administrador' : 'Membro';
+                document.getElementById('user-avatar-initial').textContent = currentUser.name.charAt(0).toUpperCase();
+
+                if (currentUser.role === 'admin') {
+                    navAdmin.classList.remove('hidden');
+                    mobileNavAdmin.classList.remove('hidden');
+                } else {
+                    navAdmin.classList.add('hidden');
+                    mobileNavAdmin.classList.add('hidden');
+                }
+            } else {
+                guestView.classList.remove('hidden');
+                guestView.classList.add('flex');
+                loggedView.classList.add('hidden');
+                loggedView.classList.remove('flex');
+                navAdmin.classList.add('hidden');
+                mobileNavAdmin.classList.add('hidden');
+            }
+        }
+
+        function openAuthModal(mode) {
+            document.getElementById('auth-modal').classList.remove('hidden');
+            document.getElementById('auth-modal').classList.add('flex');
+            switchAuthTab(mode);
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+            document.getElementById('auth-modal').classList.remove('flex');
+        }
+
+        function switchAuthTab(mode) {
+            const tabLogin = document.getElementById('auth-tab-login');
+            const tabRegister = document.getElementById('auth-tab-register');
+            const formLogin = document.getElementById('form-login');
+            const formRegister = document.getElementById('form-register');
+
+            if (mode === 'login') {
+                tabLogin.className = 'flex-1 pb-3 text-center font-bold text-sm text-neonOrange border-b-2 border-neonOrange transition';
+                tabRegister.className = 'flex-1 pb-3 text-center font-bold text-sm text-neutral-400 border-b-2 border-transparent transition';
+                formLogin.classList.remove('hidden');
+                formRegister.classList.add('hidden');
+            } else {
+                tabRegister.className = 'flex-1 pb-3 text-center font-bold text-sm text-neonOrange border-b-2 border-neonOrange transition';
+                tabLogin.className = 'flex-1 pb-3 text-center font-bold text-sm text-neutral-400 border-b-2 border-transparent transition';
+                formRegister.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+            }
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-password').value;
+
+            const found = users.find(u => u.email === email && u.password === pass);
+            if (found) {
+                currentUser = found;
+                localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+                closeAuthModal();
+                checkAuthState();
+                showToast(`Bem-vindo de volta, ${currentUser.name}!`, 'success');
+            } else {
+                showToast('E-mail ou senha incorretos.', 'error');
+            }
+        }
+
+        function handleRegisterSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+            const password = document.getElementById('reg-password').value;
+
+            if (users.some(u => u.email === email)) {
+                showToast('Este e-mail já está cadastrado no sistema.', 'error');
+                return;
+            }
+
+            const newUser = {
+                id: 'usr-' + Date.now(),
+                name,
+                email,
+                phone,
+                password,
+                role: 'client'
+            };
+
+            users.push(newUser);
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+
+            currentUser = newUser;
+            localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
+
+            closeAuthModal();
+            checkAuthState();
+            showToast('Conta criada com sucesso!', 'success');
+        }
+
+        function logoutUser() {
+            currentUser = null;
+            localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+            checkAuthState();
+            switchTab('home');
+            showToast('Sessão encerrada com sucesso.', 'info');
+        }
+
+        /* --- NAVIGATION TABS --- */
+        function switchTab(tabId) {
+            ['home', 'minhas-cotas', 'admin'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (el) el.classList.add('hidden');
+                const navBtn = document.getElementById(`nav-${t}`);
+                if (navBtn) {
+                    navBtn.className = 'text-neutral-400 hover:text-white transition flex items-center space-x-2 py-2 border-b-2 border-transparent';
+                }
+            });
+
+            const targetTab = document.getElementById(`tab-${tabId}`);
+            if (targetTab) targetTab.classList.remove('hidden');
+
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.className = 'text-neonOrange transition flex items-center space-x-2 py-2 border-b-2 border-neonOrange';
+            }
+
+            if (tabId === 'minhas-cotas') {
+                renderUserTickets();
+            } else if (tabId === 'admin') {
+                if (!currentUser || currentUser.role !== 'admin') {
+                    showToast('Acesso restrito a administradores.', 'error');
+                    switchTab('home');
+                    return;
+                }
+                renderAdminPanel();
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        /* --- HOME / LANDING PAGE & QUANTITY SELECTOR --- */
+        function renderHomeRaffle() {
+            const activeRaffle = raffles[0] || defaultRaffles[0];
+            document.getElementById('hero-raffle-title').innerHTML = `${activeRaffle.title} <span class="text-transparent bg-clip-text bg-gradient-to-r from-neonOrange to-amber-500">OU PIX</span>`;
+            document.getElementById('hero-raffle-desc').textContent = activeRaffle.description;
+            document.getElementById('badge-price').textContent = activeRaffle.price.toFixed(2).replace('.', ',');
+            document.getElementById('card-raffle-title').textContent = activeRaffle.title;
+            document.getElementById('raffle-image-display').src = activeRaffle.image;
+
+            const pct = Math.round((activeRaffle.sold / activeRaffle.total) * 100);
+            document.getElementById('progress-percentage').textContent = pct + '%';
+            document.getElementById('progress-bar-fill').style.width = pct + '%';
+            document.getElementById('progress-count-text').textContent = `${activeRaffle.sold.toLocaleString()} de ${activeRaffle.total.toLocaleString()} cotas vendidas`;
+
+            // update packages price
+            document.querySelectorAll('.pkg-val').forEach(el => {
+                const qty = parseInt(el.getAttribute('data-qty'));
+                el.textContent = (qty * activeRaffle.price).toFixed(2).replace('.', ',');
+            });
+
+            updateCustomQty(20);
+        }
+
+        function selectPackage(qty) {
+            document.getElementById('custom-qty-input').value = qty;
+            document.getElementById('custom-qty-range').value = qty > 500 ? 500 : qty;
+            updateCustomQty(qty);
+        }
+
+        function updateCustomSlider(val) {
+            document.getElementById('custom-qty-input').value = val;
+            updateCustomQty(val);
+        }
+
+        function updateCustomQty(val) {
+            let qty = parseInt(val) || 1;
+            if (qty < 1) qty = 1;
+            if (qty > 10000) qty = 10000;
+            currentCheckoutQty = qty;
+            
+            const activeRaffle = raffles[0] || defaultRaffles[0];
+            currentCheckoutPrice = qty * activeRaffle.price;
+
+            document.getElementById('checkout-total-price').textContent = `R$ ${currentCheckoutPrice.toFixed(2).replace('.', ',')}`;
+            document.getElementById('checkout-total-quotas').textContent = `(${qty} ${qty === 1 ? 'cota selecionada' : 'cotas selecionadas'})`;
+        }
+
+        function handleCheckout() {
+            if (!currentUser) {
+                showToast('Você precisa estar logado para participar da rifa.', 'info');
+                openAuthModal('login');
+                return;
+            }
+
+            document.getElementById('modal-summary-qty').textContent = `${currentCheckoutQty} cotas`;
+            document.getElementById('modal-summary-price').textContent = `R$ ${currentCheckoutPrice.toFixed(2).replace('.', ',')}`;
+            
+            document.getElementById('checkout-modal').classList.remove('hidden');
+            document.getElementById('checkout-modal').classList.add('flex');
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+            document.getElementById('checkout-modal').classList.remove('flex');
+        }
+
+        function copyPixKey() {
+            const input = document.getElementById('pix-copy-key');
+            input.select();
+            document.execCommand('copy');
+            showToast('Chave PIX copiada para a área de transferência!', 'success');
+        }
+
+        function confirmPaymentSimulation() {
+            const activeRaffle = raffles[0] || defaultRaffles[0];
+            
+            // Generate random unique numbers
+            const numbers = [];
+            for (let i = 0; i < currentCheckoutQty; i++) {
+                const num = Math.floor(10000 + Math.random() * 90000).toString();
+                numbers.push(num);
+            }
+
+            const newSale = {
+                id: 'TX-' + Math.floor(100000 + Math.random() * 900000),
+                userId: currentUser.id,
+                userName: currentUser.name,
+                userEmail: currentUser.email,
+                raffleId: activeRaffle.id,
+                raffleTitle: activeRaffle.title,
+                qty: currentCheckoutQty,
+                total: currentCheckoutPrice,
+                numbers: numbers,
+                status: 'Aprovado',
+                date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})
+            };
+
+            sales.unshift(newSale);
+            localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
+
+            // update raffle sold count
+            activeRaffle.sold += currentCheckoutQty;
+            if (activeRaffle.sold > activeRaffle.total) activeRaffle.sold = activeRaffle.total;
+            localStorage.setItem(STORAGE_KEYS.RAFFLES, JSON.stringify(raffles));
+
+            closeCheckoutModal();
+            renderHomeRaffle();
+            showToast('Pagamento aprovado com sucesso! Seus bilhetes foram gerados.', 'success');
+            switchTab('minhas-cotas');
+        }
+
+        /* --- USER TICKETS TAB --- */
+        function renderUserTickets() {
+            const container = document.getElementById('user-tickets-container');
+            document.getElementById('user-profile-email').textContent = currentUser ? currentUser.email : '-';
+
+            if (!currentUser) {
+                container.innerHTML = `<p class="text-center text-neutral-400 py-8">Faça login para ver suas cotas.</p>`;
+                return;
+            }
+
+            const userSales = sales.filter(s => s.userId === currentUser.id);
+
+            if (userSales.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 space-y-4">
+                        <div class="w-16 h-16 bg-cardBg border border-neutral-800 text-neutral-500 rounded-2xl mx-auto flex items-center justify-center text-2xl">
+                            <i class="fa-solid fa-ticket-simple"></i>
+                        </div>
+                        <p class="text-neutral-400 text-sm">Você ainda não adquiriu nenhuma cota de rifa.</p>
+                        <button onclick="switchTab('home')" class="bg-neonOrange text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow-neon">Participar Agora</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = userSales.map(sale => `
+                <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b border-neutral-800">
+                        <div>
+                            <span class="text-[10px] bg-neonOrange/10 text-neonOrange border border-neonOrange/30 px-2.5 py-1 rounded-full font-bold uppercase">${sale.id}</span>
+                            <h4 class="text-lg font-bold text-white mt-2">${sale.raffleTitle}</h4>
+                        </div>
+                        <div class="text-left sm:text-right">
+                            <span class="inline-block px-3 py-1 bg-green-500/10 text-green-500 border border-green-500/30 rounded-full text-xs font-bold">${sale.status}</span>
+                            <p class="text-[10px] text-neutral-400 mt-1">${sale.date}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap justify-between items-center text-xs text-neutral-400">
+                        <span>Quantidade: <strong class="text-white">${sale.qty} cotas</strong></span>
+                        <span>Valor Pago: <strong class="text-neonOrange">R$ ${sale.total.toFixed(2).replace('.', ',')}</strong></span>
+                    </div>
+
+                    <div>
+                        <p class="text-xs font-bold text-neutral-400 uppercase mb-2">Seus Bilhetes da Sorte:</p>
+                        <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-2 bg-cardBg rounded-xl border border-neutral-800">
+                            ${sale.numbers.map(num => `
+                                <span class="bg-darkBg border border-neutral-700 text-neonOrange font-mono font-bold text-xs px-3 py-1.5 rounded-lg shadow-sm">
+                                    #${num}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        /* --- ADMIN PANEL & DRAW --- */
+        function renderAdminPanel() {
+            // Stats
+            const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
+            const totalTickets = sales.reduce((acc, s) => acc + s.qty, 0);
+            
+            document.getElementById('admin-stat-revenue').textContent = `R$ ${totalRevenue.toFixed(2).replace('.', ',')}`;
+            document.getElementById('admin-stat-tickets').textContent = totalTickets.toLocaleString();
+            document.getElementById('admin-stat-users').textContent = users.length.toLocaleString();
+
+            // Raffles list
+            const rafflesListEl = document.getElementById('admin-raffles-list');
+            rafflesListEl.innerHTML = raffles.map(r => `
+                <div class="bg-darkBg border border-neutral-800 p-4 sm:p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex items-center space-x-4">
+                        <img src="${r.image}" class="w-16 h-16 rounded-xl object-cover border border-neutral-700">
+                        <div>
+                            <h4 class="font-bold text-white">${r.title}</h4>
+                            <p class="text-xs text-neutral-400">Preço: R$ ${r.price.toFixed(2).replace('.', ',')} | Vendidas: ${r.sold}/${r.total}</p>
+                            ${r.winner ? `<p class="text-xs text-green-500 font-bold mt-1"><i class="fa-solid fa-trophy"></i> Ganhador: ${r.winner.name} (Bilhete #${r.winner.ticket})</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 w-full md:w-auto justify-end">
+                        <button onclick="openDrawModal('${r.id}')" class="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-2">
+                            <i class="fa-solid fa-dice"></i> <span>Sortear Ganhador</span>
+                        </button>
+                        <button onclick="deleteRaffle('${r.id}')" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 text-xs px-3 py-2.5 rounded-xl transition">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Sales Table
+            const salesTableBody = document.getElementById('admin-sales-table-body');
+            if (sales.length === 0) {
+                salesTableBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-neutral-500">Nenhuma venda registrada até o momento.</td></tr>`;
+            } else {
+                salesTableBody.innerHTML = sales.map(s => `
+                    <tr class="hover:bg-cardBg transition border-b border-neutral-800">
+                        <td class="px-6 py-4 font-mono font-bold text-neonOrange">${s.id}</td>
+                        <td class="px-6 py-4 font-medium text-white">${s.userName} <span class="block text-[10px] text-neutral-500">${s.userEmail}</span></td>
+                        <td class="px-6 py-4">${s.qty} cotas</td>
+                        <td class="px-6 py-4 font-bold text-white">R$ ${s.total.toFixed(2).replace('.', ',')}</td>
+                        <td class="px-6 py-4"><span class="px-2.5 py-1 bg-green-500/10 text-green-500 border border-green-500/30 rounded-full font-bold text-[10px]">${s.status}</span></td>
+                        <td class="px-6 py-4 text-neutral-400">${s.date}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function openNewRaffleModal() {
+            document.getElementById('form-raffle').reset();
+            document.getElementById('edit-raffle-id').value = '';
+            document.getElementById('raffle-modal-title').textContent = 'CRIAR NOVA RIFA';
+            document.getElementById('raffle-modal').classList.remove('hidden');
+            document.getElementById('raffle-modal').classList.add('flex');
+        }
+
+        function closeNewRaffleModal() {
+            document.getElementById('raffle-modal').classList.add('hidden');
+            document.getElementById('raffle-modal').classList.remove('flex');
+        }
+
+        function handleRaffleFormSubmit(e) {
+            e.preventDefault();
+            const title = document.getElementById('rf-title').value.trim();
+            const price = parseFloat(document.getElementById('rf-price').value);
+            const total = parseInt(document.getElementById('rf-total').value);
+            const image = document.getElementById('rf-image').value.trim();
+            const description = document.getElementById('rf-desc').value.trim();
+
+            const newR = {
+                id: 'rifa-' + Date.now(),
+                title,
+                price,
+                total,
+                sold: 0,
+                image,
+                description,
+                status: 'Ativa',
+                winner: null
+            };
+
+            raffles.unshift(newR);
+            localStorage.setItem(STORAGE_KEYS.RAFFLES, JSON.stringify(raffles));
+
+            closeNewRaffleModal();
+            renderAdminPanel();
+            renderHomeRaffle();
+            showToast('Nova rifa criada com sucesso!', 'success');
+        }
+
+        function deleteRaffle(id) {
+            if (confirm('Tem certeza que deseja remover esta rifa?')) {
+                raffles = raffles.filter(r => r.id !== id);
+                localStorage.setItem(STORAGE_KEYS.RAFFLES, JSON.stringify(raffles));
+                renderAdminPanel();
+                renderHomeRaffle();
+                showToast('Rifa removida com sucesso.', 'info');
+            }
+        }
+
+        /* --- SORTEIO AUTOMATIZADO --- */
+        function openDrawModal(raffleId) {
+            activeDrawRaffleId = raffleId;
+            const r = raffles.find(item => item.id === raffleId);
+            document.getElementById('draw-raffle-name-sub').textContent = `Sorteando bilhete premiado para: ${r.title}`;
+            document.getElementById('draw-spinner-box').classList.remove('hidden');
+            document.getElementById('draw-winner-result').classList.add('hidden');
+            document.getElementById('btn-execute-draw').disabled = false;
+            document.getElementById('btn-execute-draw').classList.remove('opacity-50');
+
+            document.getElementById('draw-modal').classList.remove('hidden');
+            document.getElementById('draw-modal').classList.add('flex');
+        }
+
+        function closeDrawModal() {
+            document.getElementById('draw-modal').classList.add('hidden');
+            document.getElementById('draw-modal').classList.remove('flex');
+        }
+
+        function executeRandomDraw() {
+            const r = raffles.find(item => item.id === activeDrawRaffleId);
+            const raffleSales = sales.filter(s => s.raffleId === activeDrawRaffleId);
+
+            if (raffleSales.length === 0) {
+                showToast('Esta rifa não possui vendas registradas para o sorteio.', 'error');
+                return;
+            }
+
+            document.getElementById('btn-execute-draw').disabled = true;
+            document.getElementById('btn-execute-draw').classList.add('opacity-50');
+
+            let counter = 0;
+            const interval = setInterval(() => {
+                const randomNum = Math.floor(10000 + Math.random() * 90000);
+                document.getElementById('draw-random-number').textContent = `#${randomNum}`;
+                counter++;
+
+                if (counter > 20) {
+                    clearInterval(interval);
+
+                    // Pick random sale and ticket
+                    const randomSale = raffleSales[Math.floor(Math.random() * raffleSales.length)];
+                    const randomTicket = randomSale.numbers[Math.floor(Math.random() * randomSale.numbers.length)];
+
+                    r.winner = {
+                        name: randomSale.userName,
+                        email: randomSale.userEmail,
+                        ticket: randomTicket
+                    };
+                    localStorage.setItem(STORAGE_KEYS.RAFFLES, JSON.stringify(raffles));
+
+                    document.getElementById('draw-spinner-box').classList.add('hidden');
+                    document.getElementById('draw-winner-result').classList.remove('hidden');
+                    document.getElementById('winner-name-txt').textContent = randomSale.userName;
+                    document.getElementById('winner-ticket-txt').textContent = `Bilhete Sorteado: #${randomTicket}`;
+                    document.getElementById('winner-email-txt').textContent = randomSale.userEmail;
+
+                    renderAdminPanel();
+                    showToast('Ganhador sorteado com sucesso!', 'success');
+                }
+            }, 100);
+        }
+
+        /* --- COUNTDOWN TIMER --- */
+        function startCountdown() {
+            let totalSeconds = 5 * 24 * 60 * 60 + 14 * 60 * 60 + 32 * 60 + 45;
+            setInterval(() => {
+                if (totalSeconds > 0) totalSeconds--;
+                const days = Math.floor(totalSeconds / (3600 * 24));
+                const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+                const mins = Math.floor((totalSeconds % 3600) / 60);
+                const secs = totalSeconds % 60;
+
+                const dEl = document.getElementById('timer-days');
+                const hEl = document.getElementById('timer-hours');
+                const mEl = document.getElementById('timer-mins');
+                const sEl = document.getElementById('timer-secs');
+
+                if (dEl) dEl.textContent = String(days).padStart(2, '0');
+                if (hEl) hEl.textContent = String(hours).padStart(2, '0');
+                if (mEl) mEl.textContent = String(mins).padStart(2, '0');
+                if (sEl) sEl.textContent = String(secs).padStart(2, '0');
+            }, 1000);
+        }
+
+        /* --- TOAST NOTIFICATIONS --- */
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let borderColor = 'border-neonOrange';
+            let icon = 'fa-circle-check text-neonOrange';
+            if (type === 'error') {
+                borderColor = 'border-red-500';
+                icon = 'fa-circle-exclamation text-red-500';
+            } else if (type === 'info') {
+                borderColor = 'border-amber-500';
+                icon = 'fa-circle-info text-amber-500';
+            }
+
+            toast.className = `bg-cardBg border ${borderColor} text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 text-xs font-bold transition transform translate-y-2 opacity-0 animate-fade-in`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i><span>${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
