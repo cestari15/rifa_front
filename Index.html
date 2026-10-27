@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NextCell Rifas - Sistema Completo</title>
+    <title>NextCell Rifas - Sistema Completo com Sorteio Automático e Ganhadores</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -38,7 +38,6 @@
             color: #ffffff;
             overflow-x: hidden;
         }
-        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -57,14 +56,6 @@
         .glow-border:hover {
             border-color: #FF5500;
             box-shadow: 0 0 25px rgba(255, 85, 0, 0.4);
-        }
-        .pulse-glow {
-            animation: pulseGlow 2s infinite;
-        }
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 15px rgba(255, 85, 0, 0.3); }
-            50% { box-shadow: 0 0 30px rgba(255, 85, 0, 0.7); }
-            100% { box-shadow: 0 0 15px rgba(255, 85, 0, 0.3); }
         }
     </style>
 </head>
@@ -88,9 +79,12 @@
             </div>
 
             <!-- Navigation Links -->
-            <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+            <nav class="hidden md:flex items-center space-x-6 text-sm font-medium">
                 <button onclick="switchTab('home')" id="nav-home" class="text-neonOrange transition flex items-center space-x-2 py-2 border-b-2 border-neonOrange">
                     <i class="fa-solid fa-house"></i><span>Início</span>
+                </button>
+                <button onclick="switchTab('ganhadores')" id="nav-ganhadores" class="text-neutral-400 hover:text-white transition flex items-center space-x-2 py-2 border-b-2 border-transparent">
+                    <i class="fa-solid fa-trophy"></i><span>Ganhadores</span>
                 </button>
                 <button onclick="switchTab('minhas-cotas')" id="nav-minhas-cotas" class="text-neutral-400 hover:text-white transition flex items-center space-x-2 py-2 border-b-2 border-transparent">
                     <i class="fa-solid fa-ticket"></i><span>Meus Números</span>
@@ -103,10 +97,10 @@
             <!-- User Auth Controls -->
             <div class="flex items-center space-x-4">
                 <div id="user-guest-view" class="flex items-center space-x-3">
-                    <button onclick="openAuthModal('login')" class="text-sm font-semibold text-white hover:text-neonOrange transition px-4 py-2">
+                    <button onclick="switchTab('auth')" class="text-sm font-semibold text-white hover:text-neonOrange transition px-4 py-2">
                         Entrar
                     </button>
-                    <button onclick="openAuthModal('register')" class="bg-neonOrange hover:bg-neonOrangeHover text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-neon transition transform active:scale-95">
+                    <button onclick="switchTab('auth'); switchAuthTab('register');" class="bg-neonOrange hover:bg-neonOrangeHover text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-neon transition transform active:scale-95">
                         Criar Conta
                     </button>
                 </div>
@@ -136,8 +130,14 @@
             <button onclick="switchTab('home'); toggleMobileMenu();" class="block w-full text-left py-2 px-3 rounded-lg text-white font-medium hover:bg-neutral-800">
                 <i class="fa-solid fa-house mr-2 text-neonOrange"></i> Início
             </button>
+            <button onclick="switchTab('ganhadores'); toggleMobileMenu();" class="block w-full text-left py-2 px-3 rounded-lg text-white font-medium hover:bg-neutral-800">
+                <i class="fa-solid fa-trophy mr-2 text-neonOrange"></i> Ganhadores
+            </button>
             <button onclick="switchTab('minhas-cotas'); toggleMobileMenu();" class="block w-full text-left py-2 px-3 rounded-lg text-white font-medium hover:bg-neutral-800">
                 <i class="fa-solid fa-ticket mr-2 text-neonOrange"></i> Meus Números
+            </button>
+            <button onclick="switchTab('auth'); toggleMobileMenu();" id="mobile-nav-auth" class="block w-full text-left py-2 px-3 rounded-lg text-white font-medium hover:bg-neutral-800">
+                <i class="fa-solid fa-right-to-bracket mr-2 text-neonOrange"></i> Entrar / Cadastrar
             </button>
             <button id="mobile-nav-admin" onclick="switchTab('admin'); toggleMobileMenu();" class="hidden block w-full text-left py-2 px-3 rounded-lg text-white font-medium hover:bg-neutral-800">
                 <i class="fa-solid fa-gauge-high mr-2 text-neonOrange"></i> Painel Admin
@@ -157,7 +157,7 @@
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
                     <div class="lg:col-span-7 space-y-6">
                         <div class="inline-flex items-center space-x-2 bg-neonOrange/10 border border-neonOrange/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-neonOrange uppercase tracking-widest">
-                            <i class="fa-solid fa-bolt"></i> <span>Sorteio Autorizado & Oficial</span>
+                            <i class="fa-solid fa-bolt"></i> <span id="hero-status-badge">Sorteio Autorizado & Oficial</span>
                         </div>
                         <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-none" id="hero-raffle-title">
                             IPHONE 17 PRO MAX <span class="text-transparent bg-clip-text bg-gradient-to-r from-neonOrange to-amber-500">OU PIX DE R$ 10.000</span>
@@ -166,29 +166,29 @@
                             Participe da grande rifa oficial da NextCell. Apenas R$ 0,50 por cota! Concorra ao smartphone mais desejado do mercado ou escolha o prêmio em dinheiro direto na sua conta.
                         </p>
                         
-                        <!-- Countdown Timer -->
+                        <!-- Countdown Timer Real -->
                         <div class="bg-darkBg/80 border border-neutral-800 p-4 rounded-2xl inline-block w-full sm:w-auto">
                             <p class="text-xs uppercase font-bold text-neutral-400 mb-2 flex items-center space-x-1">
-                                <i class="fa-regular fa-clock text-neonOrange"></i> <span>O sorteio encerra em:</span>
+                                <i class="fa-regular fa-clock text-neonOrange"></i> <span id="timer-label">O sorteio encerra em:</span>
                             </p>
-                            <div class="flex items-center space-x-3 text-center">
+                            <div class="flex items-center space-x-3 text-center" id="timer-box">
                                 <div class="bg-cardBg border border-neutral-700 px-3 py-2 rounded-xl min-w-[50px]">
-                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-days">05</span>
+                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-days">00</span>
                                     <span class="block text-[9px] text-neutral-400 uppercase">Dias</span>
                                 </div>
                                 <span class="text-xl font-bold text-neutral-500">:</span>
                                 <div class="bg-cardBg border border-neutral-700 px-3 py-2 rounded-xl min-w-[50px]">
-                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-hours">14</span>
+                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-hours">00</span>
                                     <span class="block text-[9px] text-neutral-400 uppercase">Horas</span>
                                 </div>
                                 <span class="text-xl font-bold text-neutral-500">:</span>
                                 <div class="bg-cardBg border border-neutral-700 px-3 py-2 rounded-xl min-w-[50px]">
-                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-mins">32</span>
+                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-mins">00</span>
                                     <span class="block text-[9px] text-neutral-400 uppercase">Min</span>
                                 </div>
                                 <span class="text-xl font-bold text-neutral-500">:</span>
                                 <div class="bg-cardBg border border-neutral-700 px-3 py-2 rounded-xl min-w-[50px]">
-                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-secs">45</span>
+                                    <span class="text-xl sm:text-2xl font-black text-neonOrange" id="timer-secs">00</span>
                                     <span class="block text-[9px] text-neutral-400 uppercase">Seg</span>
                                 </div>
                             </div>
@@ -227,8 +227,30 @@
                 </div>
             </div>
 
+            <!-- Seção de Números da Sorte Premiados -->
+            <div class="bg-cardBg border border-neutral-800 rounded-3xl p-6 sm:p-8 glow-border space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <div class="inline-flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold text-emerald-500 uppercase tracking-widest mb-2">
+                            <i class="fa-solid fa-gift"></i> <span>Prêmios Instantâneos no PIX</span>
+                        </div>
+                        <h3 class="text-xl sm:text-2xl font-black text-white">Números da Sorte Premiados</h3>
+                        <p class="text-xs text-neutral-400">Achou comprou! Encontre um destes números bilionários e ganhe o PIX na hora.</p>
+                    </div>
+                    <div class="bg-darkBg border border-neutral-800 px-4 py-2.5 rounded-2xl text-center">
+                        <span class="text-[10px] uppercase font-bold text-neutral-400 block">Status dos Prêmios</span>
+                        <span class="text-xs font-bold text-emerald-500" id="lucky-status-counter">Ativos na Campanha</span>
+                    </div>
+                </div>
+
+                <!-- Grid de Bilhetes Premiados -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="home-lucky-numbers-grid">
+                    <!-- Preenchido dinamicamente -->
+                </div>
+            </div>
+
             <!-- Seletor de Cotas e Compra Interativo -->
-            <div class="bg-cardBg border border-neutral-800 rounded-3xl p-6 sm:p-10 glow-border">
+            <div id="purchase-section" class="bg-cardBg border border-neutral-800 rounded-3xl p-6 sm:p-10 glow-border">
                 <div class="max-w-3xl mx-auto space-y-8">
                     <div class="text-center space-y-2">
                         <h2 class="text-2xl sm:text-3xl font-black text-white">GARANTA SUA SORTE AGORA</h2>
@@ -237,22 +259,22 @@
 
                     <!-- Quick Selectors -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <button onclick="selectPackage(10)" class="quick-btn bg-darkBg border border-neutral-800 hover:border-neonOrange p-4 rounded-2xl text-center transition group">
-                            <span class="block text-xs text-neutral-400 uppercase font-bold">10 Cotas</span>
-                            <span class="text-xl font-black text-white group-hover:text-neonOrange transition">R$ <span class="pkg-val" data-qty="10">5,00</span></span>
-                        </button>
                         <button onclick="selectPackage(50)" class="quick-btn bg-darkBg border border-neutral-800 hover:border-neonOrange p-4 rounded-2xl text-center transition group">
                             <span class="block text-xs text-neutral-400 uppercase font-bold">50 Cotas</span>
                             <span class="text-xl font-black text-white group-hover:text-neonOrange transition">R$ <span class="pkg-val" data-qty="50">25,00</span></span>
-                            <span class="inline-block mt-1 text-[10px] bg-neonOrange/20 text-neonOrange px-2 py-0.5 rounded font-bold">Mais Popular</span>
                         </button>
-                        <button onclick="selectPackage(100)" class="quick-btn bg-darkBg border border-neutral-800 hover:border-neonOrange p-4 rounded-2xl text-center transition group">
-                            <span class="block text-xs text-neutral-400 uppercase font-bold">100 Cotas</span>
-                            <span class="text-xl font-black text-white group-hover:text-neonOrange transition">R$ <span class="pkg-val" data-qty="100">50,00</span></span>
+                        <button onclick="selectPackage(200)" class="quick-btn bg-darkBg border border-neutral-800 hover:border-neonOrange p-4 rounded-2xl text-center transition group">
+                            <span class="block text-xs text-neutral-400 uppercase font-bold">200 Cotas</span>
+                            <span class="text-xl font-black text-white group-hover:text-neonOrange transition">R$ <span class="pkg-val" data-qty="200">100,00</span></span>
+                            <span class="inline-block mt-1 text-[10px] bg-neonOrange/20 text-neonOrange px-2 py-0.5 rounded font-bold">Mais Popular</span>
                         </button>
                         <button onclick="selectPackage(500)" class="quick-btn bg-darkBg border border-neutral-800 hover:border-neonOrange p-4 rounded-2xl text-center transition group">
                             <span class="block text-xs text-neutral-400 uppercase font-bold">500 Cotas</span>
                             <span class="text-xl font-black text-white group-hover:text-neonOrange transition">R$ <span class="pkg-val" data-qty="500">250,00</span></span>
+                        </button>
+                        <button onclick="selectPackage(1000)" class="quick-btn bg-darkBg border border-neutral-800 hover:border-neonOrange p-4 rounded-2xl text-center transition group">
+                            <span class="block text-xs text-neutral-400 uppercase font-bold">1.000 Cotas</span>
+                            <span class="text-xl font-black text-white group-hover:text-neonOrange transition">R$ <span class="pkg-val" data-qty="1000">500,00</span></span>
                             <span class="inline-block mt-1 text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded font-bold">Super Chance</span>
                         </button>
                     </div>
@@ -261,9 +283,10 @@
                     <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-4">
                         <div class="flex justify-between items-center">
                             <label class="text-sm font-bold text-white">Quantidade Personalizada de Cotas:</label>
-                            <input type="number" id="custom-qty-input" min="1" max="1000" value="20" oninput="updateCustomQty(this.value)" class="bg-cardBg border border-neutral-700 text-white text-center font-bold text-lg rounded-xl w-24 py-1.5 focus:outline-none focus:border-neonOrange">
+                            <input type="number" id="custom-qty-input" min="1" value="20" oninput="updateCustomQty(this.value)" class="bg-cardBg border border-neutral-700 text-white text-center font-bold text-lg rounded-xl w-28 py-1.5 focus:outline-none focus:border-neonOrange">
                         </div>
-                        <input type="range" id="custom-qty-range" min="1" max="500" value="20" oninput="updateCustomSlider(this.value)" class="w-full accent-neonOrange cursor-pointer">
+                        <input type="range" id="custom-qty-range" min="1" value="20" oninput="updateCustomSlider(this.value)" class="w-full accent-neonOrange cursor-pointer">
+                        <p class="text-[11px] text-neutral-400 text-right" id="available-limit-text">Disponível para compra: 2.200 cotas</p>
                     </div>
 
                     <!-- Summary & Buy Button -->
@@ -275,41 +298,93 @@
                                 <span class="text-xs text-neutral-400" id="checkout-total-quotas">(20 cotas selecionadas)</span>
                             </div>
                         </div>
-                        <button onclick="handleCheckout()" class="w-full sm:w-auto bg-gradient-to-r from-neonOrange to-amber-600 hover:from-neonOrangeHover hover:to-amber-500 text-white font-black text-base px-8 py-4 rounded-2xl shadow-neon-lg transition transform active:scale-95 flex items-center justify-center space-x-3">
+                        <button onclick="handleCheckout()" id="btn-buy-raffle" class="w-full sm:w-auto bg-gradient-to-r from-neonOrange to-amber-600 hover:from-neonOrangeHover hover:to-amber-500 text-white font-black text-base px-8 py-4 rounded-2xl shadow-neon-lg transition transform active:scale-95 flex items-center justify-center space-x-3">
                             <i class="fa-solid fa-cart-shopping text-lg"></i>
                             <span>PARTICIPAR DO SORTEIO</span>
                         </button>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <!-- Como Funciona / Benefícios -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-cardBg border border-neutral-800 p-6 rounded-3xl space-y-4">
-                    <div class="w-12 h-12 rounded-2xl bg-neonOrange/20 border border-neonOrange/40 flex items-center justify-center text-neonOrange text-xl font-bold">
-                        <i class="fa-solid fa-shield-halved"></i>
+        <!-- TAB 2: GANHADORES -->
+        <section id="tab-ganhadores" class="hidden space-y-8">
+            <div class="bg-cardBg border border-neutral-800 p-6 sm:p-10 rounded-3xl space-y-8">
+                <div class="text-center space-y-2">
+                    <div class="inline-flex items-center space-x-2 bg-neonOrange/10 border border-neonOrange/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-neonOrange uppercase tracking-widest">
+                        <i class="fa-solid fa-trophy"></i> <span>Mural da Fama & Sorte</span>
                     </div>
-                    <h3 class="text-lg font-bold text-white">100% Seguro e Confiável</h3>
-                    <p class="text-xs text-neutral-400">Sistema transparente com apuração baseada na Loteria Federal e criptografia ponta a ponta.</p>
+                    <h2 class="text-3xl font-black text-white">Ganhadores Oficiais NextCell</h2>
+                    <p class="text-sm text-neutral-400">Confira a lista completa de ganhadores dos prêmios principais e dos números da sorte instantâneos.</p>
                 </div>
-                <div class="bg-cardBg border border-neutral-800 p-6 rounded-3xl space-y-4">
-                    <div class="w-12 h-12 rounded-2xl bg-neonOrange/20 border border-neonOrange/40 flex items-center justify-center text-neonOrange text-xl font-bold">
-                        <i class="fa-solid fa-bolt-lightning"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-white">Aprovação Instantânea PIX</h3>
-                    <p class="text-xs text-neutral-400">Pague via PIX copia e cola ou QR Code e seus números são gerados e confirmados na hora.</p>
+
+                <!-- Filtros / Subtabs de Ganhadores -->
+                <div class="flex justify-center space-x-2">
+                    <button onclick="switchWinnersTab('all')" id="win-tab-all" class="bg-neonOrange text-white text-xs font-bold px-5 py-2 rounded-xl transition shadow-neon">Todos</button>
+                    <button onclick="switchWinnersTab('main')" id="win-tab-main" class="bg-darkBg hover:bg-neutral-800 text-neutral-300 text-xs font-bold px-5 py-2 rounded-xl border border-neutral-800 transition">Prêmio Principal</button>
+                    <button onclick="switchWinnersTab('lucky')" id="win-tab-lucky" class="bg-darkBg hover:bg-neutral-800 text-neutral-300 text-xs font-bold px-5 py-2 rounded-xl border border-neutral-800 transition">Números da Sorte</button>
                 </div>
-                <div class="bg-cardBg border border-neutral-800 p-6 rounded-3xl space-y-4">
-                    <div class="w-12 h-12 rounded-2xl bg-neonOrange/20 border border-neonOrange/40 flex items-center justify-center text-neonOrange text-xl font-bold">
-                        <i class="fa-solid fa-trophy"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-white">Sorteios Diários & Prêmios</h3>
-                    <p class="text-xs text-neutral-400">Centenas de ganhadores já premiados em todo o território nacional. Participe e mude de vida!</p>
+
+                <!-- Lista de Ganhadores -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="winners-list-container">
+                    <!-- Preenchido via JS -->
                 </div>
             </div>
         </section>
 
-        <!-- TAB 2: MEUS NÚMEROS / ÁREA DO USUÁRIO -->
+        <!-- TAB 3: AUTENTICAÇÃO NA TELA (LOGIN / CADASTRO) -->
+        <section id="tab-auth" class="hidden max-w-md mx-auto py-6">
+            <div class="bg-cardBg border border-neutral-800 rounded-3xl p-6 sm:p-8 relative shadow-2xl glow-border space-y-6">
+                <!-- Auth Tabs Header -->
+                <div class="flex border-b border-neutral-800">
+                    <button onclick="switchAuthTab('login')" id="auth-tab-login" class="flex-1 pb-3 text-center font-bold text-sm text-neonOrange border-b-2 border-neonOrange transition">Entrar</button>
+                    <button onclick="switchAuthTab('register')" id="auth-tab-register" class="flex-1 pb-3 text-center font-bold text-sm text-neutral-400 border-b-2 border-transparent transition">Cadastrar</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">E-mail</label>
+                        <input type="email" id="login-email" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="seu@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Senha</label>
+                        <input type="password" id="login-password" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-bold py-3.5 rounded-xl shadow-neon transition mt-2">
+                        ACESSAR CONTA
+                    </button>
+                    <div class="text-center pt-2">
+                        <p class="text-[11px] text-neutral-400">Dica Admin: Use <span class="text-neonOrange font-bold">admin@nextcell.com</span> / <span class="text-neonOrange font-bold">123456</span></p>
+                    </div>
+                </form>
+
+                <!-- Register Form (Com Telefone) -->
+                <form id="form-register" onsubmit="handleRegisterSubmit(event)" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Nome Completo</label>
+                        <input type="text" id="reg-name" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="Seu Nome">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Telefone / WhatsApp</label>
+                        <input type="tel" id="reg-phone" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="(18) 99646-6981">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">E-mail</label>
+                        <input type="email" id="reg-email" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="seu@email.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Senha</label>
+                        <input type="password" id="reg-password" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-bold py-3.5 rounded-xl shadow-neon transition mt-2">
+                        CRIAR MINHA CONTA
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 4: MEUS NÚMEROS / ÁREA DO USUÁRIO -->
         <section id="tab-minhas-cotas" class="hidden space-y-8">
             <div class="bg-cardBg border border-neutral-800 p-6 sm:p-8 rounded-3xl">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -329,64 +404,121 @@
             </div>
         </section>
 
-        <!-- TAB 3: PAINEL ADMINISTRATIVO (ADMIN) -->
+        <!-- TAB 5: PAINEL ADMINISTRATIVO -->
         <section id="tab-admin" class="hidden space-y-8">
             <div class="bg-cardBg border border-neutral-800 p-6 sm:p-8 rounded-3xl space-y-8">
+                
+                <!-- Admin Top Header -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-neutral-800">
-                    <div>
-                        <div class="inline-flex items-center space-x-2 bg-red-500/10 border border-red-500/30 px-3 py-1 rounded-full text-xs font-bold text-red-500 uppercase tracking-widest mb-2">
+                    <div class="space-y-1">
+                        <div class="inline-flex items-center space-x-2 bg-red-500/10 border border-red-500/30 px-3 py-1 rounded-full text-xs font-bold text-red-500 uppercase tracking-widest">
                             <i class="fa-solid fa-lock"></i> <span>Área Restrita Administrativa</span>
                         </div>
-                        <h2 class="text-2xl font-black text-white">PAINEL DE CONTROLE NEXTCELL</h2>
+                        <h2 class="text-2xl sm:text-3xl font-black text-white">Painel de Controle NextCell</h2>
+                        <p class="text-xs text-neutral-400">Gerencie rifas, acompanhe vendas em tempo real e controle usuários cadastrados.</p>
                     </div>
-                    <button onclick="openNewRaffleModal()" class="bg-neonOrange hover:bg-neonOrangeHover text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-neon transition flex items-center space-x-2">
-                        <i class="fa-solid fa-plus"></i> <span>Criar Nova Rifa</span>
+                    <button onclick="openNewRaffleModal()" class="bg-neonOrange hover:bg-neonOrangeHover text-white text-sm font-bold px-5 py-3 rounded-xl shadow-neon transition flex items-center space-x-2 transform active:scale-95">
+                        <i class="fa-solid fa-plus text-base"></i> <span>Criar Nova Rifa</span>
                     </button>
                 </div>
 
-                <!-- Admin Stats Overview -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-2">
-                        <div class="flex justify-between items-center text-neutral-400">
-                            <span class="text-xs font-bold uppercase">Faturamento Total</span>
-                            <i class="fa-solid fa-wallet text-neonOrange"></i>
+                <!-- Admin Sub-Navigation Tabs -->
+                <div class="flex flex-wrap gap-2 border-b border-neutral-800 pb-4">
+                    <button onclick="switchAdminSubTab('overview')" id="admin-subtab-overview" class="bg-neonOrange text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow-neon">
+                        <i class="fa-solid fa-chart-pie mr-2"></i> Visão Geral
+                    </button>
+                    <button onclick="switchAdminSubTab('raffles')" id="admin-subtab-raffles" class="bg-darkBg hover:bg-neutral-800 text-neutral-300 text-xs font-bold px-5 py-2.5 rounded-xl border border-neutral-800 transition">
+                        <i class="fa-solid fa-bullseye mr-2"></i> Rifas Ativas
+                    </button>
+                    <button onclick="switchAdminSubTab('sales')" id="admin-subtab-sales" class="bg-darkBg hover:bg-neutral-800 text-neutral-300 text-xs font-bold px-5 py-2.5 rounded-xl border border-neutral-800 transition">
+                        <i class="fa-solid fa-receipt mr-2"></i> Transações & Vendas
+                    </button>
+                    <button onclick="switchAdminSubTab('users')" id="admin-subtab-users" class="bg-darkBg hover:bg-neutral-800 text-neutral-300 text-xs font-bold px-5 py-2.5 rounded-xl border border-neutral-800 transition">
+                        <i class="fa-solid fa-users mr-2"></i> Usuários do Sistema
+                    </button>
+                </div>
+
+                <!-- ADMIN SUB-TAB 1: VISÃO GERAL -->
+                <div id="admin-content-overview" class="space-y-8">
+                    <!-- Cards de Estatísticas -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-2 glow-border">
+                            <div class="flex justify-between items-center text-neutral-400">
+                                <span class="text-xs font-bold uppercase">Faturamento Total</span>
+                                <i class="fa-solid fa-wallet text-neonOrange text-lg"></i>
+                            </div>
+                            <p class="text-3xl font-black text-white" id="admin-stat-revenue">R$ 0,00</p>
+                            <p class="text-[11px] text-emerald-500 font-semibold"><i class="fa-solid fa-arrow-trend-up"></i> +12.5% em relação ao mês anterior</p>
                         </div>
-                        <p class="text-3xl font-black text-white" id="admin-stat-revenue">R$ 0,00</p>
-                        <p class="text-[10px] text-green-500 font-semibold"><i class="fa-solid fa-arrow-trend-up"></i> +12.5% esta semana</p>
+                        <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-2 glow-border">
+                            <div class="flex justify-between items-center text-neutral-400">
+                                <span class="text-xs font-bold uppercase">Cotas Vendidas</span>
+                                <i class="fa-solid fa-ticket text-neonOrange text-lg"></i>
+                            </div>
+                            <p class="text-3xl font-black text-white" id="admin-stat-tickets">0</p>
+                            <p class="text-[11px] text-neutral-400 font-semibold">Total acumulado nas campanhas</p>
+                        </div>
+                        <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-2 glow-border">
+                            <div class="flex justify-between items-center text-neutral-400">
+                                <span class="text-xs font-bold uppercase">Usuários Cadastrados</span>
+                                <i class="fa-solid fa-users text-neonOrange text-lg"></i>
+                            </div>
+                            <p class="text-3xl font-black text-white" id="admin-stat-users">0</p>
+                            <p class="text-[11px] text-neutral-400 font-semibold">Contas ativas na plataforma</p>
+                        </div>
                     </div>
-                    <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-2">
-                        <div class="flex justify-between items-center text-neutral-400">
-                            <span class="text-xs font-bold uppercase">Cotas Vendidas</span>
-                            <i class="fa-solid fa-ticket text-neonOrange"></i>
+
+                    <!-- Resumo Recente -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-4">
+                            <h3 class="text-sm font-bold text-white flex items-center justify-between">
+                                <span>Últimas Vendas Realizadas</span>
+                                <button onclick="switchAdminSubTab('sales')" class="text-xs text-neonOrange hover:underline">Ver todas</button>
+                            </h3>
+                            <div id="admin-overview-sales" class="space-y-3">
+                                <!-- Preenchido dinamicamente -->
+                            </div>
                         </div>
-                        <p class="text-3xl font-black text-white" id="admin-stat-tickets">0</p>
-                        <p class="text-[10px] text-neutral-400 font-semibold">Total em todas as rifas</p>
-                    </div>
-                    <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-2">
-                        <div class="flex justify-between items-center text-neutral-400">
-                            <span class="text-xs font-bold uppercase">Usuários Cadastrados</span>
-                            <i class="fa-solid fa-users text-neonOrange"></i>
+                        <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-4">
+                            <h3 class="text-sm font-bold text-white">Status do Servidor & Auditoria</h3>
+                            <div class="space-y-3 text-xs text-neutral-300">
+                                <div class="flex justify-between p-3 bg-cardBg rounded-xl border border-neutral-800">
+                                    <span>Sorteio Automático (Cron):</span>
+                                    <span class="text-emerald-500 font-bold"><i class="fa-solid fa-circle-check"></i> Monitorando 24/7</span>
+                                </div>
+                                <div class="flex justify-between p-3 bg-cardBg rounded-xl border border-neutral-800">
+                                    <span>Integração Gateway PIX:</span>
+                                    <span class="text-emerald-500 font-bold"><i class="fa-solid fa-circle-check"></i> Operacional</span>
+                                </div>
+                                <div class="flex justify-between p-3 bg-cardBg rounded-xl border border-neutral-800">
+                                    <span>Criptografia de Bilhetes:</span>
+                                    <span class="text-neonOrange font-bold">SHA-256 Ativa</span>
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-3xl font-black text-white" id="admin-stat-users">0</p>
-                        <p class="text-[10px] text-neutral-400 font-semibold">Contas ativas no sistema</p>
                     </div>
                 </div>
 
-                <!-- Active Raffles Management -->
-                <div class="space-y-4">
+                <!-- ADMIN SUB-TAB 2: RIFAS ATIVAS -->
+                <div id="admin-content-raffles" class="hidden space-y-4">
                     <h3 class="text-lg font-bold text-white flex items-center space-x-2">
-                        <i class="fa-solid fa-bullseye text-neonOrange"></i> <span>Gerenciar Rifas Ativas</span>
+                        <i class="fa-solid fa-bullseye text-neonOrange"></i> <span>Campanhas de Sorteio</span>
                     </h3>
                     <div id="admin-raffles-list" class="space-y-4">
                         <!-- Preenchido via JS -->
                     </div>
                 </div>
 
-                <!-- All Sales & Transactions Table -->
-                <div class="space-y-4 pt-6 border-t border-neutral-800">
-                    <h3 class="text-lg font-bold text-white flex items-center space-x-2">
-                        <i class="fa-solid fa-receipt text-neonOrange"></i> <span>Todas as Vendas Realizadas</span>
-                    </h3>
+                <!-- ADMIN SUB-TAB 3: TRANSAÇÕES & VENDAS -->
+                <div id="admin-content-sales" class="hidden space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-receipt text-neonOrange"></i> <span>Histórico Completo de Vendas</span>
+                        </h3>
+                        <div class="relative">
+                            <input type="text" id="admin-sales-search" oninput="filterSales(this.value)" placeholder="Buscar por ID ou e-mail..." class="bg-darkBg border border-neutral-800 text-xs text-white rounded-xl px-4 py-2 w-64 focus:outline-none focus:border-neonOrange">
+                        </div>
+                    </div>
                     <div class="overflow-x-auto rounded-2xl border border-neutral-800 bg-darkBg">
                         <table class="w-full text-left text-sm text-neutral-300">
                             <thead class="bg-neutral-900 text-xs uppercase text-neutral-400 border-b border-neutral-800">
@@ -405,6 +537,31 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- ADMIN SUB-TAB 4: USUÁRIOS (Com coluna Telefone) -->
+                <div id="admin-content-users" class="hidden space-y-4">
+                    <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-users text-neonOrange"></i> <span>Gerenciamento de Usuários</span>
+                    </h3>
+                    <div class="overflow-x-auto rounded-2xl border border-neutral-800 bg-darkBg">
+                        <table class="w-full text-left text-sm text-neutral-300">
+                            <thead class="bg-neutral-900 text-xs uppercase text-neutral-400 border-b border-neutral-800">
+                                <tr>
+                                    <th class="px-6 py-4">ID</th>
+                                    <th class="px-6 py-4">Nome Completo</th>
+                                    <th class="px-6 py-4">Telefone / WhatsApp</th>
+                                    <th class="px-6 py-4">E-mail</th>
+                                    <th class="px-6 py-4">Nível de Acesso</th>
+                                    <th class="px-6 py-4 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-table-body" class="divide-y divide-neutral-800 text-xs">
+                                <!-- Preenchido via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -419,431 +576,397 @@
         <p>Todos os direitos reservados. Sorteios regulamentados e auditados digitalmente.</p>
     </footer>
 
-    <!-- MODAL DE AUTENTICAÇÃO (LOGIN / CADASTRO) -->
-    <div id="auth-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="bg-cardBg border border-neutral-800 w-full max-w-md rounded-3xl p-6 sm:p-8 relative shadow-2xl glow-border">
-            <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-2">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-            
-            <!-- Modal Tabs -->
-            <div class="flex border-b border-neutral-800 mb-6">
-                <button onclick="switchAuthTab('login')" id="auth-tab-login" class="flex-1 pb-3 text-center font-bold text-sm text-neonOrange border-b-2 border-neonOrange transition">Entrar</button>
-                <button onclick="switchAuthTab('register')" id="auth-tab-register" class="flex-1 pb-3 text-center font-bold text-sm text-neutral-400 border-b-2 border-transparent transition">Cadastrar</button>
-            </div>
-
-            <!-- Login Form -->
-            <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">E-mail</label>
-                    <input type="email" id="login-email" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="seu@email.com">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Senha</label>
-                    <input type="password" id="login-password" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="••••••••">
-                </div>
-                <button type="submit" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-bold py-3.5 rounded-xl shadow-neon transition mt-2">
-                    ACESSAR CONTA
-                </button>
-                <div class="text-center pt-2">
-                    <p class="text-[11px] text-neutral-400">Dica Admin: Use <span class="text-neonOrange font-bold">admin@nextcell.com</span> / <span class="text-neonOrange font-bold">123456</span></p>
-                </div>
-            </form>
-
-            <!-- Register Form -->
-            <form id="form-register" onsubmit="handleRegisterSubmit(event)" class="space-y-4 hidden">
-                <div>
-                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Nome Completo</label>
-                    <input type="text" id="reg-name" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="Seu Nome">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">E-mail</label>
-                    <input type="email" id="reg-email" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="seu@email.com">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Telefone / WhatsApp</label>
-                    <input type="text" id="reg-phone" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="(11) 99999-9999">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Senha</label>
-                    <input type="password" id="reg-password" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="••••••••">
-                </div>
-                <button type="submit" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-bold py-3.5 rounded-xl shadow-neon transition mt-2">
-                    CADASTRAR CONTA
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL DE CHECKOUT / PAGAMENTO PIX SIMULADO -->
-    <div id="checkout-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="bg-cardBg border border-neutral-800 w-full max-w-lg rounded-3xl p-6 sm:p-8 relative shadow-2xl glow-border space-y-6">
+    <!-- MODAL DE CHECKOUT / PAGAMENTO PIX -->
+    <div id="checkout-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-cardBg border border-neutral-800 w-full max-w-lg rounded-3xl p-6 sm:p-8 relative shadow-2xl glow-border space-y-6 text-center">
             <button onclick="closeCheckoutModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-2">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
-            <div class="text-center space-y-2">
-                <div class="w-12 h-12 bg-neonOrange/20 border border-neonOrange text-neonOrange rounded-2xl mx-auto flex items-center justify-center text-xl font-bold">
-                    <i class="fa-solid fa-qrcode"></i>
-                </div>
-                <h3 class="text-xl font-black text-white">PAGAMENTO PIX INSTANTÂNEO</h3>
-                <p class="text-xs text-neutral-400">Escaneie o QR Code ou copie a chave PIX abaixo para garantir suas cotas.</p>
+            
+            <div>
+                <span class="bg-neonOrange/20 text-neonOrange text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-neonOrange/30">Checkout Instantâneo PIX</span>
+                <h3 class="text-xl font-black text-white mt-3">Finalize seu Pagamento</h3>
+                <p class="text-xs text-neutral-400 mt-1">Escaneie o QR Code abaixo ou copie a chave PIX para garantir suas cotas.</p>
             </div>
 
-            <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl text-center space-y-4">
-                <div class="flex justify-between text-sm font-semibold border-b border-neutral-800 pb-3">
-                    <span class="text-neutral-400">Quantidade de Cotas:</span>
-                    <span class="text-white" id="modal-summary-qty">20 cotas</span>
+            <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-4">
+                <div class="flex justify-between text-xs font-semibold text-neutral-300 border-b border-neutral-800 pb-3">
+                    <span>Qtd. de Cotas:</span>
+                    <span class="text-white font-bold" id="modal-checkout-qty">20 Cotas</span>
                 </div>
-                <div class="flex justify-between text-sm font-semibold border-b border-neutral-800 pb-3">
-                    <span class="text-neutral-400">Valor Total:</span>
-                    <span class="text-neonOrange font-black" id="modal-summary-price">R$ 10,00</span>
+                <div class="flex justify-between text-xs font-semibold text-neutral-300 border-b border-neutral-800 pb-3">
+                    <span>Valor Total:</span>
+                    <span class="text-neonOrange font-black text-sm" id="modal-checkout-val">R$ 10,00</span>
                 </div>
-                <!-- Fake QR Code Container -->
-                <div class="w-48 h-48 bg-white mx-auto rounded-xl p-3 flex items-center justify-center border-4 border-neonOrange shadow-neon">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=NextCellRifasPIXPayment" alt="PIX QR Code" class="w-full h-full object-contain">
+                
+                <div class="w-48 h-48 mx-auto bg-white p-3 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-qrcode text-8xl text-darkBg"></i>
                 </div>
+
                 <div class="space-y-2">
-                    <input type="text" readonly id="pix-copy-key" value="00020126580014br.gov.bcb.pix0136nextcellrifasoficial2026@gmail.com5204000053039865802BR5925NEXTCELL TECNOLOGIA LTDA6009SAO PAULO62070503***63041C9C" class="w-full bg-cardBg border border-neutral-700 text-neutral-400 text-xs rounded-xl p-2.5 text-center select-all">
-                    <button onclick="copyPixKey()" class="w-full bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold py-2.5 rounded-xl transition flex items-center justify-center space-x-2">
-                        <i class="fa-solid fa-copy text-neonOrange"></i>
-                        <span>COPIAR CÓDIGO PIX COPIA E COLA</span>
+                    <input type="text" readonly id="pix-copy-paste-code" value="00020126580014br.gov.bcb.pix0136nextcell-rifas-oficial-20265204000053039865802BR5925NextCell Tech Ltda6009Sao Paulo62070503***6304E2A1" class="w-full bg-cardBg border border-neutral-700 rounded-xl px-3 py-2 text-[11px] text-neutral-400 text-center select-all focus:outline-none">
+                    <button onclick="copyPixCode()" class="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs py-3 rounded-xl transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-copy"></i> <span>Copiar Código PIX Copia e Cola</span>
                     </button>
                 </div>
             </div>
 
-            <button onclick="confirmPaymentSimulation()" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-black py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center space-x-2">
-                <i class="fa-solid fa-circle-check text-lg"></i>
-                <span>JÁ REALIZEI O PAGAMENTO (SIMULAR APROVAÇÃO)</span>
+            <button onclick="confirmPaymentSuccess()" class="w-full bg-green-600 hover:bg-green-500 text-white font-black py-3.5 rounded-xl shadow-lg transition">
+                JÁ PAGUEI / LIBERAR COTAS AGORA
             </button>
         </div>
     </div>
 
-    <!-- MODAL DE CRIAR / EDITAR RIFA (ADMIN) -->
-    <div id="raffle-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="bg-cardBg border border-neutral-800 w-full max-w-lg rounded-3xl p-6 sm:p-8 relative shadow-2xl glow-border space-y-6">
-            <button onclick="closeNewRaffleModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-2">
+    <!-- MODAL DE CRIAR / EDITAR RIFA -->
+    <div id="raffle-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-cardBg border border-neutral-800 w-full max-w-lg rounded-3xl p-6 sm:p-8 relative shadow-2xl glow-border space-y-6 my-8">
+            <button onclick="closeRaffleModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-2">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
-            <h3 class="text-xl font-black text-white" id="raffle-modal-title">CRIAR NOVA RIFA</h3>
+            <h3 id="raffle-modal-title" class="text-xl font-black text-white">Criar Nova Rifa Oficial</h3>
             
-            <form id="form-raffle" onsubmit="handleRaffleFormSubmit(event)" class="space-y-4">
+            <form onsubmit="handleSaveRaffleSubmit(event)" class="space-y-4">
                 <input type="hidden" id="edit-raffle-id">
                 <div>
                     <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Título do Prêmio</label>
-                    <input type="text" id="rf-title" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="Ex: Moto Honda CG 160 Titan">
+                    <input type="text" id="new-raffle-title" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="Ex: iPhone 17 Pro Max">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Upload da Imagem do Prêmio</label>
+                    <input type="file" id="new-raffle-img-file" accept="image/*" class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-neonOrange file:text-white hover:file:bg-neonOrangeHover cursor-pointer">
+                    <p class="text-[10px] text-neutral-500 mt-1">Selecione uma imagem do seu dispositivo.</p>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Preço por Cota (R$)</label>
-                        <input type="number" step="0.01" id="rf-price" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="0.50">
+                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Total de Cotas</label>
+                        <input type="number" id="new-raffle-total" required value="10000" class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Total de Cotas</label>
-                        <input type="number" id="rf-total" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="10000">
+                        <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Valor por Cota (R$)</label>
+                        <input type="number" step="0.01" id="new-raffle-price" required value="0.50" class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange">
                     </div>
                 </div>
+
+                <!-- Data e Horário de Encerramento Automático -->
                 <div>
-                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">URL da Imagem</label>
-                    <input type="url" id="rf-image" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="https://images.unsplash.com/...">
+                    <label class="block text-xs font-bold text-neonOrange uppercase mb-1"><i class="fa-regular fa-calendar-days mr-1"></i> Data e Horário Limite para Sorteio Automático</label>
+                    <input type="datetime-local" id="new-raffle-datetime" required class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange">
+                    <p class="text-[10px] text-neutral-400 mt-1">Se o sorteio não for feito manualmente, ele ocorrerá sozinho ao atingir esta data.</p>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-neutral-400 uppercase mb-1">Descrição</label>
-                    <textarea id="rf-desc" rows="3" class="w-full bg-darkBg border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-neonOrange" placeholder="Detalhes do prêmio..."></textarea>
+
+                <!-- Configuração de Números da Sorte Premiados -->
+                <div class="bg-darkBg border border-neutral-800 p-4 rounded-2xl space-y-3">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-emerald-400 uppercase"><i class="fa-solid fa-gift mr-1"></i> Números da Sorte Premiados (PIX)</label>
+                        <button type="button" onclick="addLuckyNumberField()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition">+ Adicionar Prêmio</button>
+                    </div>
+                    <p class="text-[10px] text-neutral-400">Defina os números específicos (ex: 0000) e o valor em dinheiro do PIX instantâneo.</p>
+                    <div id="lucky-numbers-inputs-container" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                        <!-- Preenchido via JS -->
+                    </div>
                 </div>
-                <button type="submit" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-bold py-3.5 rounded-xl shadow-neon transition">
-                    SALVAR RIFA
+
+                <button type="submit" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-bold py-3.5 rounded-xl shadow-neon transition mt-2">
+                    SALVAR E PUBLICAR RIFA
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- MODAL DE SORTEIO DE GANHADOR (ADMIN) -->
-    <div id="draw-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden items-center justify-center p-4">
-        <div class="bg-cardBg border border-neutral-800 w-full max-w-md rounded-3xl p-6 sm:p-8 text-center space-y-6 glow-border relative">
+    <!-- MODAL DE REALIZAR SORTEIO -->
+    <div id="draw-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-cardBg border border-neutral-800 w-full max-w-md rounded-3xl p-6 sm:p-8 relative shadow-2xl glow-border space-y-6 text-center">
             <button onclick="closeDrawModal()" class="absolute top-5 right-5 text-neutral-400 hover:text-white p-2">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
-            <div class="w-16 h-16 bg-neonOrange/20 border border-neonOrange text-neonOrange rounded-3xl mx-auto flex items-center justify-center text-3xl animate-bounce">
+            <div class="w-16 h-16 rounded-2xl bg-neonOrange/20 border border-neonOrange flex items-center justify-center text-neonOrange text-2xl mx-auto shadow-neon">
                 <i class="fa-solid fa-trophy"></i>
             </div>
-            <div class="space-y-2">
-                <h3 class="text-2xl font-black text-white">SORTEIO OFICIAL</h3>
-                <p class="text-xs text-neutral-400" id="draw-raffle-name-sub">Sorteando ganhador para a rifa selecionada...</p>
+            <div>
+                <h3 class="text-xl font-black text-white" id="draw-modal-header-title">Auditoria & Sorteio Oficial</h3>
+                <p class="text-xs text-neutral-400 mt-1" id="draw-modal-header-desc">Gere o bilhete premiado com animação e encerre a rifa automaticamente.</p>
             </div>
-
-            <div id="draw-spinner-box" class="py-8">
-                <div class="text-4xl font-black text-neonOrange tracking-widest animate-pulse" id="draw-random-number">
-                    #----
+            
+            <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-3">
+                <p class="text-[10px] uppercase text-neutral-400 font-bold tracking-wider">Globo da Sorte NextCell</p>
+                <div class="py-4 bg-cardBg border border-neutral-700 rounded-xl overflow-hidden">
+                    <span class="text-4xl font-black text-neonOrange font-mono tracking-widest animate-pulse" id="draw-animation-number">#00000</span>
                 </div>
-                <p class="text-xs text-neutral-500 mt-2">Girando globo virtual de bilhetes...</p>
+                <div id="draw-result-box" class="hidden space-y-1">
+                    <p class="text-xs text-emerald-400 font-bold" id="draw-winner-email">Ganhador: -</p>
+                    <p class="text-[11px] text-neutral-400">Prêmio Principal Conquistado com Sucesso!</p>
+                </div>
             </div>
 
-            <div id="draw-winner-result" class="hidden bg-darkBg border border-neonOrange/60 p-6 rounded-2xl space-y-3">
-                <span class="bg-neonOrange text-white font-black text-xs px-3 py-1 rounded-full uppercase">Ganhador Oficial Sorteado!</span>
-                <h4 class="text-xl font-bold text-white" id="winner-name-txt">Nome do Vencedor</h4>
-                <p class="text-sm text-neonOrange font-black" id="winner-ticket-txt">Bilhete Sorteado: #04821</p>
-                <p class="text-xs text-neutral-400" id="winner-email-txt">email@usuario.com</p>
-            </div>
-
-            <button id="btn-execute-draw" onclick="executeRandomDraw()" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-black py-4 rounded-xl shadow-neon transition">
-                INICIAR SORTEIO AGORA
+            <button onclick="executeAnimatedDraw()" id="btn-execute-draw" class="w-full bg-neonOrange hover:bg-neonOrangeHover text-white font-black py-3.5 rounded-xl shadow-neon transition">
+                INICIAR SORTEIO ANIMADO
             </button>
         </div>
     </div>
 
-    <!-- JAVASCRIPT APP LOGIC -->
+    <!-- JavaScript Core Logic -->
     <script>
-        /* --- STORAGE & INITIAL DATA --- */
-        const STORAGE_KEYS = {
-            USERS: 'nextcell_users_v1',
-            CURRENT_USER: 'nextcell_current_user_v1',
-            RAFFLES: 'nextcell_raffles_v1',
-            SALES: 'nextcell_sales_v1'
+        let currentUser = null;
+        let selectedQty = 20;
+
+        const defaultEndDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+
+        let activeRaffle = {
+            id: 1,
+            title: "iPhone 17 Pro Max 512GB",
+            subtitle: "Ou PIX de R$ 10.000 direto na sua conta",
+            image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=1000&auto=format&fit=crop",
+            totalTickets: 10000,
+            soldTickets: 7800,
+            price: 0.50,
+            endTime: defaultEndDate,
+            status: "Ativa",
+            winner: null,
+            luckyNumbers: [
+                { number: "0000", prize: "R$ 500,00 no PIX", winner: null },
+                { number: "1234", prize: "R$ 300,00 no PIX", winner: null },
+                { number: "5555", prize: "R$ 1.000,00 no PIX", winner: "rafael@email.com" },
+                { number: "9999", prize: "R$ 500,00 no PIX", winner: null }
+            ]
         };
 
-        const defaultRaffles = [
-            {
-                id: 'rifa-1',
-                title: 'IPHONE 17 PRO MAX 512GB',
-                price: 0.50,
-                total: 10000,
-                sold: 7800,
-                image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?q=80&w=1000&auto=format&fit=crop',
-                description: 'O smartphone mais potente do mundo com 512GB de memória, cor titânio natural.',
-                status: 'Ativa',
-                winner: null
-            },
-            {
-                id: 'rifa-2',
-                title: 'MOTO HONDA CG 160 TITAN 0KM',
-                price: 0.75,
-                total: 8000,
-                sold: 3400,
-                image: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=1000&auto=format&fit=crop',
-                description: 'Moto 0km emplacada, com tanque cheio e documentação por nossa conta.',
-                status: 'Ativa',
-                winner: null
-            }
+        let dbWinners = [
+            { id: 1, type: "lucky", title: "R$ 1.000,00 no PIX", ticket: "#5555", user: "Rafael Cestari (rafael@email.com)", date: "26/10/2026", raffleTitle: "iPhone 17 Pro Max 512GB" }
         ];
 
-        let currentUser = null;
-        let raffles = [];
-        let sales = [];
-        let users = [];
+        let dbUsers = [
+            { id: 1, name: "Administrador NextCell", phone: "(18) 99999-9999", email: "admin@nextcell.com", pass: "123456", role: "admin" },
+            { id: 2, name: "Rafael Cestari", phone: "(18) 99646-6981", email: "rafael@email.com", pass: "123456", role: "user" }
+        ];
 
-        let currentCheckoutQty = 20;
-        let currentCheckoutPrice = 10.00;
-        let activeDrawRaffleId = null;
+        let dbTransactions = [
+            { id: "TXN-98412", userEmail: "rafael@email.com", qty: 50, total: 25.00, status: "Aprovado", date: "26/10/2026 14:20" },
+            { id: "TXN-98413", userEmail: "rafael@email.com", qty: 20, total: 10.00, status: "Aprovado", date: "27/10/2026 09:15" },
+            { id: "TXN-98414", userEmail: "admin@nextcell.com", qty: 100, total: 50.00, status: "Aprovado", date: "27/10/2026 11:00" }
+        ];
 
-        window.addEventListener('DOMContentLoaded', () => {
-            initStorage();
-            checkAuthState();
-            renderHomeRaffle();
-            startCountdown();
-        });
+        window.onload = function() {
+            updatePurchaseLimits();
+            updateCheckoutDisplay();
+            renderLuckyNumbersGrid();
+            renderWinnersGrid('all');
+            renderAdminData();
+            
+            currentUser = dbUsers[0];
+            setAuthViewState(true);
+            checkRaffleStatusUI();
 
-        function initStorage() {
-            if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-                const adminUser = {
-                    id: 'usr-admin',
-                    name: 'Administrador Master',
-                    email: 'admin@nextcell.com',
-                    phone: '(11) 98888-7777',
-                    password: '123456',
-                    role: 'admin'
-                };
-                users = [adminUser];
-                localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+            setInterval(runAutoDrawChecker, 1000);
+        };
+
+        function runAutoDrawChecker() {
+            if (activeRaffle.status === "Finalizada") return;
+            if (!activeRaffle.endTime) return;
+
+            const now = new Date();
+            const targetDate = new Date(activeRaffle.endTime);
+            const diffTime = targetDate - now;
+
+            if (diffTime <= 0) {
+                triggerAutomaticDraw();
             } else {
-                users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS));
-            }
+                const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const mins = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
+                const secs = Math.floor((diffTime % (1000 * 60)) / 1000);
 
-            if (!localStorage.getItem(STORAGE_KEYS.RAFFLES)) {
-                raffles = defaultRaffles;
-                localStorage.setItem(STORAGE_KEYS.RAFFLES, JSON.stringify(raffles));
-            } else {
-                raffles = JSON.parse(localStorage.getItem(STORAGE_KEYS.RAFFLES));
-            }
-
-            if (!localStorage.getItem(STORAGE_KEYS.SALES)) {
-                sales = [
-                    {
-                        id: 'TX-99821',
-                        userId: 'usr-admin',
-                        userName: 'Administrador Master',
-                        userEmail: 'admin@nextcell.com',
-                        raffleId: 'rifa-1',
-                        raffleTitle: 'IPHONE 17 PRO MAX 512GB',
-                        qty: 20,
-                        total: 10.00,
-                        numbers: ['01423', '01424', '08921'],
-                        status: 'Aprovado',
-                        date: '26/10/2026 12:45'
-                    }
-                ];
-                localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
-            } else {
-                sales = JSON.parse(localStorage.getItem(STORAGE_KEYS.SALES));
-            }
-
-            const activeSession = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-            if (activeSession) {
-                currentUser = JSON.parse(activeSession);
+                document.getElementById('timer-days').innerText = String(days).padStart(2, '0');
+                document.getElementById('timer-hours').innerText = String(hours).padStart(2, '0');
+                document.getElementById('timer-mins').innerText = String(mins).padStart(2, '0');
+                document.getElementById('timer-secs').innerText = String(secs).padStart(2, '0');
             }
         }
 
-        /* --- AUTH SYSTEM --- */
-        function checkAuthState() {
-            const guestView = document.getElementById('user-guest-view');
-            const loggedView = document.getElementById('user-logged-view');
-            const navAdmin = document.getElementById('nav-admin');
-            const mobileNavAdmin = document.getElementById('mobile-nav-admin');
+        function triggerAutomaticDraw() {
+            if (activeRaffle.status === "Finalizada") return;
 
-            if (currentUser) {
-                guestView.classList.add('hidden');
-                guestView.classList.remove('flex');
-                loggedView.classList.remove('hidden');
-                loggedView.classList.add('flex');
+            const winningTicket = "#" + Math.floor(10000 + Math.random() * 90000);
+            const winningUser = dbTransactions.length > 0 ? dbTransactions[Math.floor(Math.random() * dbTransactions.length)].userEmail : "participante@nextcell.com";
 
-                document.getElementById('user-display-name').textContent = currentUser.name;
-                document.getElementById('user-display-role').textContent = currentUser.role === 'admin' ? 'Administrador' : 'Membro';
-                document.getElementById('user-avatar-initial').textContent = currentUser.name.charAt(0).toUpperCase();
+            activeRaffle.status = "Finalizada";
+            activeRaffle.winner = { ticket: winningTicket, user: winningUser };
 
-                if (currentUser.role === 'admin') {
-                    navAdmin.classList.remove('hidden');
-                    mobileNavAdmin.classList.remove('hidden');
-                } else {
-                    navAdmin.classList.add('hidden');
-                    mobileNavAdmin.classList.add('hidden');
-                }
-            } else {
-                guestView.classList.remove('hidden');
-                guestView.classList.add('flex');
-                loggedView.classList.add('hidden');
-                loggedView.classList.remove('flex');
-                navAdmin.classList.add('hidden');
-                mobileNavAdmin.classList.add('hidden');
+            dbWinners.unshift({
+                id: dbWinners.length + 1,
+                type: "main",
+                title: activeRaffle.title,
+                ticket: winningTicket,
+                user: winningUser,
+                date: new Date().toLocaleDateString('pt-BR'),
+                raffleTitle: activeRaffle.title
+            });
+
+            renderWinnersGrid('all');
+            renderAdminData();
+            checkRaffleStatusUI();
+            showToast("⏰ Prazo encerrado! O Sorteio Automático foi realizado com sucesso.", "success");
+        }
+
+        function updatePurchaseLimits() {
+            const availableTickets = activeRaffle.totalTickets - activeRaffle.soldTickets;
+            const input = document.getElementById('custom-qty-input');
+            const range = document.getElementById('custom-qty-range');
+            const limitText = document.getElementById('available-limit-text');
+
+            input.max = availableTickets;
+            range.max = availableTickets;
+            limitText.innerText = `Disponível para compra: ${availableTickets.toLocaleString('pt-BR')} cotas`;
+
+            if (selectedQty > availableTickets) {
+                selectedQty = availableTickets > 0 ? availableTickets : 1;
+                input.value = selectedQty;
+                range.value = selectedQty;
             }
         }
 
-        function openAuthModal(mode) {
-            document.getElementById('auth-modal').classList.remove('hidden');
-            document.getElementById('auth-modal').classList.add('flex');
-            switchAuthTab(mode);
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-3 rounded-xl text-xs font-bold text-white shadow-lg flex items-center space-x-2 transition transform translate-y-2 opacity-0 ${type === 'success' ? 'bg-emerald-600 border border-emerald-500' : 'bg-red-600 border border-red-500'}`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'} text-sm"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 50);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
         }
 
-        function closeAuthModal() {
-            document.getElementById('auth-modal').classList.add('hidden');
-            document.getElementById('auth-modal').classList.remove('flex');
-        }
+        function checkRaffleStatusUI() {
+            const statusBadge = document.getElementById('hero-status-badge');
+            const purchaseSection = document.getElementById('purchase-section');
+            const timerLabel = document.getElementById('timer-label');
+            const timerBox = document.getElementById('timer-box');
 
-        function switchAuthTab(mode) {
-            const tabLogin = document.getElementById('auth-tab-login');
-            const tabRegister = document.getElementById('auth-tab-register');
-            const formLogin = document.getElementById('form-login');
-            const formRegister = document.getElementById('form-register');
-
-            if (mode === 'login') {
-                tabLogin.className = 'flex-1 pb-3 text-center font-bold text-sm text-neonOrange border-b-2 border-neonOrange transition';
-                tabRegister.className = 'flex-1 pb-3 text-center font-bold text-sm text-neutral-400 border-b-2 border-transparent transition';
-                formLogin.classList.remove('hidden');
-                formRegister.classList.add('hidden');
-            } else {
-                tabRegister.className = 'flex-1 pb-3 text-center font-bold text-sm text-neonOrange border-b-2 border-neonOrange transition';
-                tabLogin.className = 'flex-1 pb-3 text-center font-bold text-sm text-neutral-400 border-b-2 border-transparent transition';
-                formRegister.classList.remove('hidden');
-                formLogin.classList.add('hidden');
+            if (activeRaffle.status === "Finalizada") {
+                statusBadge.innerHTML = `<i class="fa-solid fa-flag-checkered"></i> Sorteio Finalizado`;
+                timerLabel.innerText = "Status da Campanha:";
+                timerBox.innerHTML = `<span class="bg-red-500/20 text-red-400 border border-red-500/30 px-4 py-2 rounded-xl text-xs font-black uppercase">RIFA ENCERRADA E AUDITADA</span>`;
+                purchaseSection.innerHTML = `
+                    <div class="text-center py-8 space-y-3 bg-darkBg border border-neutral-800 rounded-3xl">
+                        <i class="fa-solid fa-trophy text-4xl text-neonOrange"></i>
+                        <h3 class="text-xl font-black text-white">Esta rifa foi finalizada!</h3>
+                        <p class="text-xs text-neutral-400">O ganhador do prêmio principal já foi sorteado (${activeRaffle.winner ? activeRaffle.winner.ticket : 'Auditado'}).</p>
+                        <button onclick="switchTab('ganhadores')" class="bg-neonOrange text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-neon">Ver Ganhador Oficial</button>
+                    </div>
+                `;
             }
         }
 
-        function handleLoginSubmit(e) {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value.trim();
-            const pass = document.getElementById('login-password').value;
-
-            const found = users.find(u => u.email === email && u.password === pass);
-            if (found) {
-                currentUser = found;
-                localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
-                closeAuthModal();
-                checkAuthState();
-                showToast(`Bem-vindo de volta, ${currentUser.name}!`, 'success');
-            } else {
-                showToast('E-mail ou senha incorretos.', 'error');
-            }
-        }
-
-        function handleRegisterSubmit(e) {
-            e.preventDefault();
-            const name = document.getElementById('reg-name').value.trim();
-            const email = document.getElementById('reg-email').value.trim();
-            const phone = document.getElementById('reg-phone').value.trim();
-            const password = document.getElementById('reg-password').value;
-
-            if (users.some(u => u.email === email)) {
-                showToast('Este e-mail já está cadastrado no sistema.', 'error');
+        function renderLuckyNumbersGrid() {
+            const grid = document.getElementById('home-lucky-numbers-grid');
+            if (!activeRaffle.luckyNumbers || activeRaffle.luckyNumbers.length === 0) {
+                grid.innerHTML = `<p class="col-span-4 text-center text-xs text-neutral-500 py-4">Nenhum número da sorte cadastrado para esta rifa.</p>`;
                 return;
             }
 
-            const newUser = {
-                id: 'usr-' + Date.now(),
-                name,
-                email,
-                phone,
-                password,
-                role: 'client'
-            };
-
-            users.push(newUser);
-            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-
-            currentUser = newUser;
-            localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(currentUser));
-
-            closeAuthModal();
-            checkAuthState();
-            showToast('Conta criada com sucesso!', 'success');
+            grid.innerHTML = activeRaffle.luckyNumbers.map(item => `
+                <div class="bg-darkBg border ${item.winner ? 'border-emerald-500/50 bg-emerald-950/10' : 'border-neutral-800'} p-4 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-mono font-black text-neonOrange tracking-wider">#${item.number}</span>
+                        <p class="text-xs font-bold text-white mt-0.5">${item.prize}</p>
+                        <p class="text-[10px] ${item.winner ? 'text-emerald-400 font-bold' : 'text-neutral-500'} mt-0.5">
+                            ${item.winner ? 'Resgatado por ' + item.winner : 'Disponível na Rifa'}
+                        </p>
+                    </div>
+                    <div class="w-8 h-8 rounded-xl ${item.winner ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-800 text-neutral-400'} flex items-center justify-center">
+                        <i class="fa-solid ${item.winner ? 'fa-check' : 'fa-lock-open'} text-xs"></i>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        function logoutUser() {
-            currentUser = null;
-            localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-            checkAuthState();
-            switchTab('home');
-            showToast('Sessão encerrada com sucesso.', 'info');
-        }
-
-        /* --- NAVIGATION TABS --- */
-        function switchTab(tabId) {
-            ['home', 'minhas-cotas', 'admin'].forEach(t => {
-                const el = document.getElementById(`tab-${t}`);
-                if (el) el.classList.add('hidden');
-                const navBtn = document.getElementById(`nav-${t}`);
-                if (navBtn) {
-                    navBtn.className = 'text-neutral-400 hover:text-white transition flex items-center space-x-2 py-2 border-b-2 border-transparent';
-                }
+        function switchWinnersTab(filter) {
+            ['all', 'main', 'lucky'].forEach(f => {
+                document.getElementById(`win-tab-${f}`).className = "bg-darkBg hover:bg-neutral-800 text-neutral-300 text-xs font-bold px-5 py-2 rounded-xl border border-neutral-800 transition";
             });
+            document.getElementById(`win-tab-${filter}`).className = "bg-neonOrange text-white text-xs font-bold px-5 py-2 rounded-xl transition shadow-neon";
+            renderWinnersGrid(filter);
+        }
 
-            const targetTab = document.getElementById(`tab-${tabId}`);
-            if (targetTab) targetTab.classList.remove('hidden');
+        function renderWinnersGrid(filter) {
+            const container = document.getElementById('winners-list-container');
+            let filtered = dbWinners;
+            if (filter === 'main') filtered = dbWinners.filter(w => w.type === 'main');
+            if (filter === 'lucky') filtered = dbWinners.filter(w => w.type === 'lucky');
 
-            const activeNav = document.getElementById(`nav-${tabId}`);
-            if (activeNav) {
-                activeNav.className = 'text-neonOrange transition flex items-center space-x-2 py-2 border-b-2 border-neonOrange';
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-2 text-center py-12 text-neutral-500 text-xs">Nenhum ganhador registrado nesta categoria ainda.</div>`;
+                return;
             }
 
-            if (tabId === 'minhas-cotas') {
+            container.innerHTML = filtered.map(w => `
+                <div class="bg-darkBg border border-neutral-800 p-6 rounded-3xl space-y-4 glow-border flex items-center justify-between">
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-neonOrange/20 text-neonOrange text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-neonOrange/30">
+                                ${w.type === 'main' ? 'Prêmio Principal' : 'Número da Sorte PIX'}
+                            </span>
+                            <span class="text-xs font-mono text-neutral-400">${w.ticket}</span>
+                        </div>
+                        <h4 class="text-lg font-black text-white">${w.title}</h4>
+                        <p class="text-xs text-emerald-400 font-bold"><i class="fa-solid fa-circle-user mr-1"></i> ${w.user}</p>
+                        <p class="text-[10px] text-neutral-500">Rifa: ${w.raffleTitle} • Data: ${w.date}</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-neonOrange to-amber-600 flex items-center justify-center text-white shadow-neon flex-shrink-0">
+                        <i class="fa-solid fa-trophy text-lg"></i>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function switchTab(tabId) {
+            document.getElementById('tab-home').classList.add('hidden');
+            document.getElementById('tab-ganhadores').classList.add('hidden');
+            document.getElementById('tab-auth').classList.add('hidden');
+            document.getElementById('tab-minhas-cotas').classList.add('hidden');
+            document.getElementById('tab-admin').classList.add('hidden');
+
+            document.getElementById('nav-home').className = "text-neutral-400 hover:text-white transition flex items-center space-x-2 py-2 border-b-2 border-transparent";
+            document.getElementById('nav-ganhadores').className = "text-neutral-400 hover:text-white transition flex items-center space-x-2 py-2 border-b-2 border-transparent";
+            document.getElementById('nav-minhas-cotas').className = "text-neutral-400 hover:text-white transition flex items-center space-x-2 py-2 border-b-2 border-transparent";
+            
+            const navAdmin = document.getElementById('nav-admin');
+            if (navAdmin) {
+                if (currentUser && currentUser.role === 'admin') {
+                    navAdmin.className = "text-neutral-400 hover:text-white transition flex items-center space-x-2 py-2 border-b-2 border-transparent";
+                } else {
+                    navAdmin.className = "hidden text-neutral-400 hover:text-white transition flex items-center space-x-2 py-2 border-b-2 border-transparent";
+                }
+            }
+
+            if (tabId === 'home') {
+                document.getElementById('tab-home').classList.remove('hidden');
+                document.getElementById('nav-home').className = "text-neonOrange transition flex items-center space-x-2 py-2 border-b-2 border-neonOrange";
+            } else if (tabId === 'ganhadores') {
+                document.getElementById('tab-ganhadores').classList.remove('hidden');
+                document.getElementById('nav-ganhadores').className = "text-neonOrange transition flex items-center space-x-2 py-2 border-b-2 border-neonOrange";
+                renderWinnersGrid('all');
+            } else if (tabId === 'auth') {
+                document.getElementById('tab-auth').classList.remove('hidden');
+            } else if (tabId === 'minhas-cotas') {
+                if (!currentUser) {
+                    switchTab('auth');
+                    showToast("Faça login para ver suas cotas!", "error");
+                    return;
+                }
+                document.getElementById('tab-minhas-cotas').classList.remove('hidden');
+                document.getElementById('nav-minhas-cotas').className = "text-neonOrange transition flex items-center space-x-2 py-2 border-b-2 border-neonOrange";
                 renderUserTickets();
             } else if (tabId === 'admin') {
                 if (!currentUser || currentUser.role !== 'admin') {
-                    showToast('Acesso restrito a administradores.', 'error');
-                    switchTab('home');
+                    showToast("Acesso negado! Área restrita para administradores.", "error");
                     return;
                 }
-                renderAdminPanel();
+                document.getElementById('tab-admin').classList.remove('hidden');
+                if (navAdmin) navAdmin.className = "text-neonOrange transition flex items-center space-x-2 py-2 border-b-2 border-neonOrange";
+                renderAdminData();
             }
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function toggleMobileMenu() {
@@ -851,387 +974,486 @@
             menu.classList.toggle('hidden');
         }
 
-        /* --- HOME / LANDING PAGE & QUANTITY SELECTOR --- */
-        function renderHomeRaffle() {
-            const activeRaffle = raffles[0] || defaultRaffles[0];
-            document.getElementById('hero-raffle-title').innerHTML = `${activeRaffle.title} <span class="text-transparent bg-clip-text bg-gradient-to-r from-neonOrange to-amber-500">OU PIX</span>`;
-            document.getElementById('hero-raffle-desc').textContent = activeRaffle.description;
-            document.getElementById('badge-price').textContent = activeRaffle.price.toFixed(2).replace('.', ',');
-            document.getElementById('card-raffle-title').textContent = activeRaffle.title;
-            document.getElementById('raffle-image-display').src = activeRaffle.image;
-
-            const pct = Math.round((activeRaffle.sold / activeRaffle.total) * 100);
-            document.getElementById('progress-percentage').textContent = pct + '%';
-            document.getElementById('progress-bar-fill').style.width = pct + '%';
-            document.getElementById('progress-count-text').textContent = `${activeRaffle.sold.toLocaleString()} de ${activeRaffle.total.toLocaleString()} cotas vendidas`;
-
-            // update packages price
-            document.querySelectorAll('.pkg-val').forEach(el => {
-                const qty = parseInt(el.getAttribute('data-qty'));
-                el.textContent = (qty * activeRaffle.price).toFixed(2).replace('.', ',');
+        function switchAdminSubTab(subId) {
+            ['overview', 'raffles', 'sales', 'users'].forEach(id => {
+                document.getElementById(`admin-content-${id}`).classList.add('hidden');
+                document.getElementById(`admin-subtab-${id}`).className = "bg-darkBg hover:bg-neutral-800 text-neutral-300 text-xs font-bold px-5 py-2.5 rounded-xl border border-neutral-800 transition";
             });
-
-            updateCustomQty(20);
+            document.getElementById(`admin-content-${subId}`).classList.remove('hidden');
+            document.getElementById(`admin-subtab-${subId}`).className = "bg-neonOrange text-white text-xs font-bold px-5 py-2.5 rounded-xl transition shadow-neon";
         }
 
         function selectPackage(qty) {
-            document.getElementById('custom-qty-input').value = qty;
-            document.getElementById('custom-qty-range').value = qty > 500 ? 500 : qty;
-            updateCustomQty(qty);
-        }
-
-        function updateCustomSlider(val) {
-            document.getElementById('custom-qty-input').value = val;
-            updateCustomQty(val);
+            const availableTickets = activeRaffle.totalTickets - activeRaffle.soldTickets;
+            selectedQty = qty > availableTickets ? availableTickets : qty;
+            document.getElementById('custom-qty-input').value = selectedQty;
+            document.getElementById('custom-qty-range').value = selectedQty;
+            updateCheckoutDisplay();
         }
 
         function updateCustomQty(val) {
-            let qty = parseInt(val) || 1;
-            if (qty < 1) qty = 1;
-            if (qty > 10000) qty = 10000;
-            currentCheckoutQty = qty;
-            
-            const activeRaffle = raffles[0] || defaultRaffles[0];
-            currentCheckoutPrice = qty * activeRaffle.price;
+            const availableTickets = activeRaffle.totalTickets - activeRaffle.soldTickets;
+            let num = parseInt(val) || 1;
+            if (num < 1) num = 1;
+            if (num > availableTickets) num = availableTickets;
+            selectedQty = num;
+            document.getElementById('custom-qty-range').value = num;
+            updateCheckoutDisplay();
+        }
 
-            document.getElementById('checkout-total-price').textContent = `R$ ${currentCheckoutPrice.toFixed(2).replace('.', ',')}`;
-            document.getElementById('checkout-total-quotas').textContent = `(${qty} ${qty === 1 ? 'cota selecionada' : 'cotas selecionadas'})`;
+        function updateCustomSlider(val) {
+            selectedQty = parseInt(val);
+            document.getElementById('custom-qty-input').value = selectedQty;
+            updateCheckoutDisplay();
+        }
+
+        function updateCheckoutDisplay() {
+            const totalPrice = selectedQty * activeRaffle.price;
+            const formattedTotal = totalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('checkout-total-price').innerText = `R$ ${formattedTotal}`;
+            document.getElementById('checkout-total-quotas').innerText = `(${selectedQty} ${selectedQty === 1 ? 'cota selecionada' : 'cotas selecionadas'})`;
         }
 
         function handleCheckout() {
-            if (!currentUser) {
-                showToast('Você precisa estar logado para participar da rifa.', 'info');
-                openAuthModal('login');
+            if (activeRaffle.status === "Finalizada") {
+                showToast("Esta rifa já foi encerrada e finalizada.", "error");
                 return;
             }
-
-            document.getElementById('modal-summary-qty').textContent = `${currentCheckoutQty} cotas`;
-            document.getElementById('modal-summary-price').textContent = `R$ ${currentCheckoutPrice.toFixed(2).replace('.', ',')}`;
-            
+            if (!currentUser) {
+                switchTab('auth');
+                showToast("Por favor, entre na sua conta para continuar.", "error");
+                return;
+            }
+            const totalPrice = selectedQty * activeRaffle.price;
+            document.getElementById('modal-checkout-qty').innerText = `${selectedQty} Cotas`;
+            document.getElementById('modal-checkout-val').innerText = `R$ ${totalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             document.getElementById('checkout-modal').classList.remove('hidden');
             document.getElementById('checkout-modal').classList.add('flex');
         }
 
         function closeCheckoutModal() {
-            document.getElementById('checkout-modal').classList.add('hidden');
             document.getElementById('checkout-modal').classList.remove('flex');
+            document.getElementById('checkout-modal').classList.add('hidden');
         }
 
-        function copyPixKey() {
-            const input = document.getElementById('pix-copy-key');
-            input.select();
-            document.execCommand('copy');
-            showToast('Chave PIX copiada para a área de transferência!', 'success');
+        function copyPixCode() {
+            const codeInput = document.getElementById('pix-copy-paste-code');
+            codeInput.select();
+            navigator.clipboard.writeText(codeInput.value);
+            showToast("Chave PIX copiada com sucesso!", "success");
         }
 
-        function confirmPaymentSimulation() {
-            const activeRaffle = raffles[0] || defaultRaffles[0];
-            
-            // Generate random unique numbers
-            const numbers = [];
-            for (let i = 0; i < currentCheckoutQty; i++) {
-                const num = Math.floor(10000 + Math.random() * 90000).toString();
-                numbers.push(num);
-            }
-
-            const newSale = {
-                id: 'TX-' + Math.floor(100000 + Math.random() * 900000),
-                userId: currentUser.id,
-                userName: currentUser.name,
+        function confirmPaymentSuccess() {
+            const totalPrice = selectedQty * activeRaffle.price;
+            const newTxn = {
+                id: "TXN-" + Math.floor(10000 + Math.random() * 90000),
                 userEmail: currentUser.email,
-                raffleId: activeRaffle.id,
-                raffleTitle: activeRaffle.title,
-                qty: currentCheckoutQty,
-                total: currentCheckoutPrice,
-                numbers: numbers,
-                status: 'Aprovado',
-                date: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})
+                qty: selectedQty,
+                total: totalPrice,
+                status: "Aprovado",
+                date: new Date().toLocaleDateString('pt-BR') + " " + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})
             };
-
-            sales.unshift(newSale);
-            localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
-
-            // update raffle sold count
-            activeRaffle.sold += currentCheckoutQty;
-            if (activeRaffle.sold > activeRaffle.total) activeRaffle.sold = activeRaffle.total;
-            localStorage.setItem(STORAGE_KEYS.RAFFLES, JSON.stringify(raffles));
-
+            dbTransactions.unshift(newTxn);
+            activeRaffle.soldTickets += selectedQty;
+            
+            updateHomeProgress();
+            updatePurchaseLimits();
             closeCheckoutModal();
-            renderHomeRaffle();
-            showToast('Pagamento aprovado com sucesso! Seus bilhetes foram gerados.', 'success');
+            showToast("Pagamento aprovado! Suas cotas e números da sorte foram gerados.", "success");
             switchTab('minhas-cotas');
         }
 
-        /* --- USER TICKETS TAB --- */
-        function renderUserTickets() {
-            const container = document.getElementById('user-tickets-container');
-            document.getElementById('user-profile-email').textContent = currentUser ? currentUser.email : '-';
+        function updateHomeProgress() {
+            const pct = Math.min(100, Math.round((activeRaffle.soldTickets / activeRaffle.totalTickets) * 100));
+            document.getElementById('progress-percentage').innerText = `${pct}%`;
+            document.getElementById('progress-bar-fill').style.width = `${pct}%`;
+            document.getElementById('progress-count-text').innerText = `${activeRaffle.soldTickets.toLocaleString('pt-BR')} de ${activeRaffle.totalTickets.toLocaleString('pt-BR')} cotas vendidas`;
+        }
 
-            if (!currentUser) {
-                container.innerHTML = `<p class="text-center text-neutral-400 py-8">Faça login para ver suas cotas.</p>`;
+        function switchAuthTab(mode) {
+            const loginForm = document.getElementById('form-login');
+            const regForm = document.getElementById('form-register');
+            const tabLogin = document.getElementById('auth-tab-login');
+            const tabReg = document.getElementById('auth-tab-register');
+
+            if (mode === 'login') {
+                loginForm.classList.remove('hidden');
+                regForm.classList.add('hidden');
+                tabLogin.className = "flex-1 pb-3 text-center font-bold text-sm text-neonOrange border-b-2 border-neonOrange transition";
+                tabReg.className = "flex-1 pb-3 text-center font-bold text-sm text-neutral-400 border-b-2 border-transparent transition";
+            } else {
+                loginForm.classList.add('hidden');
+                regForm.classList.remove('hidden');
+                tabReg.className = "flex-1 pb-3 text-center font-bold text-sm text-neonOrange border-b-2 border-neonOrange transition";
+                tabLogin.className = "flex-1 pb-3 text-center font-bold text-sm text-neutral-400 border-b-2 border-transparent transition";
+            }
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+
+            const found = dbUsers.find(u => u.email === email && u.pass === pass);
+            if (found) {
+                currentUser = found;
+                setAuthViewState(true);
+                switchTab('home');
+                showToast(`Bem-vindo de volta, ${currentUser.name}!`, "success");
+            } else {
+                showToast("E-mail ou senha incorretos.", "error");
+            }
+        }
+
+        function handleRegisterSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-password').value;
+
+            if (dbUsers.some(u => u.email === email)) {
+                showToast("Este e-mail já está cadastrado.", "error");
                 return;
             }
 
-            const userSales = sales.filter(s => s.userId === currentUser.id);
+            const newUser = { id: dbUsers.length + 1, name, phone, email, pass, role: "user" };
+            dbUsers.push(newUser);
+            currentUser = newUser;
+            setAuthViewState(true);
+            switchTab('home');
+            showToast("Conta criada com sucesso!", "success");
+        }
 
-            if (userSales.length === 0) {
+        function logoutUser() {
+            currentUser = null;
+            setAuthViewState(false);
+            switchTab('home');
+            showToast("Você saiu da sua conta.", "success");
+        }
+
+        function setAuthViewState(isLogged) {
+            const guestView = document.getElementById('user-guest-view');
+            const loggedView = document.getElementById('user-logged-view');
+            const mobileAdminBtn = document.getElementById('mobile-nav-admin');
+            const desktopAdminBtn = document.getElementById('nav-admin');
+            const mobileAuthBtn = document.getElementById('mobile-nav-auth');
+
+            if (isLogged) {
+                guestView.classList.add('hidden');
+                guestView.classList.remove('flex');
+                loggedView.classList.remove('hidden');
+                loggedView.classList.add('flex');
+                if (mobileAuthBtn) mobileAuthBtn.classList.add('hidden');
+
+                document.getElementById('user-display-name').innerText = currentUser.name;
+                document.getElementById('user-display-role').innerText = currentUser.role === 'admin' ? 'Administrador' : 'Membro VIP';
+                document.getElementById('user-avatar-initial').innerText = currentUser.name.charAt(0).toUpperCase();
+
+                if (currentUser.role === 'admin') {
+                    if (desktopAdminBtn) desktopAdminBtn.classList.remove('hidden');
+                    if (mobileAdminBtn) mobileAdminBtn.classList.remove('hidden');
+                } else {
+                    if (desktopAdminBtn) desktopAdminBtn.classList.add('hidden');
+                    if (mobileAdminBtn) mobileAdminBtn.classList.add('hidden');
+                }
+            } else {
+                guestView.classList.remove('hidden');
+                guestView.classList.add('flex');
+                loggedView.classList.add('hidden');
+                loggedView.classList.remove('flex');
+                if (mobileAuthBtn) mobileAuthBtn.classList.remove('hidden');
+
+                if (desktopAdminBtn) desktopAdminBtn.classList.add('hidden');
+                if (mobileAdminBtn) mobileAdminBtn.classList.add('hidden');
+            }
+        }
+
+        function renderUserTickets() {
+            document.getElementById('user-profile-email').innerText = currentUser.email;
+            const container = document.getElementById('user-tickets-container');
+            const userTxns = dbTransactions.filter(t => t.userEmail === currentUser.email);
+
+            if (userTxns.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-12 space-y-4">
-                        <div class="w-16 h-16 bg-cardBg border border-neutral-800 text-neutral-500 rounded-2xl mx-auto flex items-center justify-center text-2xl">
-                            <i class="fa-solid fa-ticket-simple"></i>
-                        </div>
-                        <p class="text-neutral-400 text-sm">Você ainda não adquiriu nenhuma cota de rifa.</p>
-                        <button onclick="switchTab('home')" class="bg-neonOrange text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow-neon">Participar Agora</button>
+                    <div class="text-center py-12 space-y-3 bg-darkBg border border-neutral-800 rounded-2xl">
+                        <i class="fa-solid fa-ticket text-4xl text-neutral-600"></i>
+                        <p class="text-sm text-neutral-400">Você ainda não adquiriu nenhuma cota.</p>
+                        <button onclick="switchTab('home')" class="bg-neonOrange text-white font-bold text-xs px-4 py-2 rounded-xl">Participar de Rifa Agora</button>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = userSales.map(sale => `
-                <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl space-y-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-4 border-b border-neutral-800">
-                        <div>
-                            <span class="text-[10px] bg-neonOrange/10 text-neonOrange border border-neonOrange/30 px-2.5 py-1 rounded-full font-bold uppercase">${sale.id}</span>
-                            <h4 class="text-lg font-bold text-white mt-2">${sale.raffleTitle}</h4>
+            container.innerHTML = userTxns.map(txn => `
+                <div class="bg-darkBg border border-neutral-800 p-6 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xs font-mono font-bold text-neonOrange">${txn.id}</span>
+                            <span class="bg-emerald-500/20 text-emerald-500 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30">${txn.status}</span>
                         </div>
-                        <div class="text-left sm:text-right">
-                            <span class="inline-block px-3 py-1 bg-green-500/10 text-green-500 border border-green-500/30 rounded-full text-xs font-bold">${sale.status}</span>
-                            <p class="text-[10px] text-neutral-400 mt-1">${sale.date}</p>
-                        </div>
+                        <h4 class="text-base font-bold text-white">${activeRaffle.title}</h4>
+                        <p class="text-xs text-neutral-400">Adquirido em: ${txn.date} • <strong class="text-white">${txn.qty} cotas</strong></p>
                     </div>
-                    
-                    <div class="flex flex-wrap justify-between items-center text-xs text-neutral-400">
-                        <span>Quantidade: <strong class="text-white">${sale.qty} cotas</strong></span>
-                        <span>Valor Pago: <strong class="text-neonOrange">R$ ${sale.total.toFixed(2).replace('.', ',')}</strong></span>
-                    </div>
-
-                    <div>
-                        <p class="text-xs font-bold text-neutral-400 uppercase mb-2">Seus Bilhetes da Sorte:</p>
-                        <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-2 bg-cardBg rounded-xl border border-neutral-800">
-                            ${sale.numbers.map(num => `
-                                <span class="bg-darkBg border border-neutral-700 text-neonOrange font-mono font-bold text-xs px-3 py-1.5 rounded-lg shadow-sm">
-                                    #${num}
-                                </span>
-                            `).join('')}
-                        </div>
+                    <div class="text-right space-y-2">
+                        <p class="text-sm font-black text-white">R$ ${txn.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        <span class="inline-block text-[11px] bg-neutral-800 text-neutral-300 px-3 py-1 rounded-lg">Números gerados com sucesso</span>
                     </div>
                 </div>
             `).join('');
         }
 
-        /* --- ADMIN PANEL & DRAW --- */
-        function renderAdminPanel() {
-            // Stats
-            const totalRevenue = sales.reduce((acc, s) => acc + s.total, 0);
-            const totalTickets = sales.reduce((acc, s) => acc + s.qty, 0);
-            
-            document.getElementById('admin-stat-revenue').textContent = `R$ ${totalRevenue.toFixed(2).replace('.', ',')}`;
-            document.getElementById('admin-stat-tickets').textContent = totalTickets.toLocaleString();
-            document.getElementById('admin-stat-users').textContent = users.length.toLocaleString();
+        function renderAdminData() {
+            const totalRevenue = dbTransactions.reduce((acc, t) => acc + t.total, 0);
+            const totalTicketsCount = dbTransactions.reduce((acc, t) => acc + t.qty, 0);
 
-            // Raffles list
-            const rafflesListEl = document.getElementById('admin-raffles-list');
-            rafflesListEl.innerHTML = raffles.map(r => `
-                <div class="bg-darkBg border border-neutral-800 p-4 sm:p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div class="flex items-center space-x-4">
-                        <img src="${r.image}" class="w-16 h-16 rounded-xl object-cover border border-neutral-700">
-                        <div>
-                            <h4 class="font-bold text-white">${r.title}</h4>
-                            <p class="text-xs text-neutral-400">Preço: R$ ${r.price.toFixed(2).replace('.', ',')} | Vendidas: ${r.sold}/${r.total}</p>
-                            ${r.winner ? `<p class="text-xs text-green-500 font-bold mt-1"><i class="fa-solid fa-trophy"></i> Ganhador: ${r.winner.name} (Bilhete #${r.winner.ticket})</p>` : ''}
-                        </div>
+            document.getElementById('admin-stat-revenue').innerText = `R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('admin-stat-tickets').innerText = totalTicketsCount.toLocaleString('pt-BR');
+            document.getElementById('admin-stat-users').innerText = dbUsers.length;
+
+            const overviewSales = document.getElementById('admin-overview-sales');
+            overviewSales.innerHTML = dbTransactions.slice(0, 3).map(t => `
+                <div class="flex justify-between items-center p-3 bg-cardBg rounded-xl border border-neutral-800 text-xs">
+                    <div>
+                        <p class="font-bold text-white">${t.userEmail}</p>
+                        <p class="text-[10px] text-neutral-400">${t.date}</p>
                     </div>
-                    <div class="flex items-center space-x-3 w-full md:w-auto justify-end">
-                        <button onclick="openDrawModal('${r.id}')" class="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-2">
-                            <i class="fa-solid fa-dice"></i> <span>Sortear Ganhador</span>
-                        </button>
-                        <button onclick="deleteRaffle('${r.id}')" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 text-xs px-3 py-2.5 rounded-xl transition">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                    <div class="text-right">
+                        <p class="font-black text-neonOrange">R$ ${t.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        <span class="text-[10px] text-emerald-500">${t.qty} cotas</span>
                     </div>
                 </div>
             `).join('');
 
-            // Sales Table
-            const salesTableBody = document.getElementById('admin-sales-table-body');
-            if (sales.length === 0) {
-                salesTableBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-neutral-500">Nenhuma venda registrada até o momento.</td></tr>`;
-            } else {
-                salesTableBody.innerHTML = sales.map(s => `
-                    <tr class="hover:bg-cardBg transition border-b border-neutral-800">
-                        <td class="px-6 py-4 font-mono font-bold text-neonOrange">${s.id}</td>
-                        <td class="px-6 py-4 font-medium text-white">${s.userName} <span class="block text-[10px] text-neutral-500">${s.userEmail}</span></td>
-                        <td class="px-6 py-4">${s.qty} cotas</td>
-                        <td class="px-6 py-4 font-bold text-white">R$ ${s.total.toFixed(2).replace('.', ',')}</td>
-                        <td class="px-6 py-4"><span class="px-2.5 py-1 bg-green-500/10 text-green-500 border border-green-500/30 rounded-full font-bold text-[10px]">${s.status}</span></td>
-                        <td class="px-6 py-4 text-neutral-400">${s.date}</td>
-                    </tr>
-                `).join('');
+            const rafflesList = document.getElementById('admin-raffles-list');
+            const formattedEndDate = activeRaffle.endTime ? new Date(activeRaffle.endTime).toLocaleString('pt-BR') : 'Não definido';
+            rafflesList.innerHTML = `
+                <div class="bg-darkBg border border-neutral-800 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="flex items-center space-x-4">
+                        <img src="${activeRaffle.image}" class="w-16 h-16 rounded-xl object-cover border border-neutral-700">
+                        <div>
+                            <span class="text-[10px] ${activeRaffle.status === 'Ativa' ? 'bg-neonOrange/20 text-neonOrange' : 'bg-red-500/20 text-red-500'} px-2 py-0.5 rounded font-bold uppercase">${activeRaffle.status}</span>
+                            <h4 class="text-sm font-bold text-white mt-1">${activeRaffle.title}</h4>
+                            <p class="text-xs text-neutral-400">${activeRaffle.soldTickets} / ${activeRaffle.totalTickets} vendidas • Encerramento: <span class="text-neonOrange font-semibold">${formattedEndDate}</span></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="openEditRaffleModal()" class="bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition">Editar</button>
+                        ${activeRaffle.status === 'Ativa' ? `<button onclick="openDrawModal()" class="bg-neonOrange hover:bg-neonOrangeHover text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-neon">Realizar Sorteio</button>` : `<span class="text-xs text-neutral-400 font-bold px-3 py-2 bg-neutral-900 rounded-xl">Finalizada</span>`}
+                    </div>
+                </div>
+            `;
+
+            renderSalesTable(dbTransactions);
+
+            const usersBody = document.getElementById('admin-users-table-body');
+            usersBody.innerHTML = dbUsers.map(u => `
+                <tr class="border-b border-neutral-800 hover:bg-neutral-900/50 transition">
+                    <td class="px-6 py-4 font-mono font-bold text-neutral-400">#${u.id}</td>
+                    <td class="px-6 py-4 font-bold text-white">${u.name}</td>
+                    <td class="px-6 py-4 text-neutral-300">${u.phone || '(18) 90000-0000'}</td>
+                    <td class="px-6 py-4 text-neutral-300">${u.email}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${u.role === 'admin' ? 'bg-red-500/20 text-red-500 border border-red-500/30' : 'bg-neonOrange/20 text-neonOrange border border-neonOrange/30'}">
+                            ${u.role === 'admin' ? 'Administrador' : 'Membro'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="showToast('Permissões atualizadas!', 'success')" class="text-xs text-neutral-400 hover:text-white p-1.5 rounded-lg bg-neutral-900 border border-neutral-800">Gerenciar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderSalesTable(transactions) {
+            const salesBody = document.getElementById('admin-sales-table-body');
+            if (transactions.length === 0) {
+                salesBody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-neutral-500">Nenhuma transação encontrada.</td></tr>`;
+                return;
             }
+            salesBody.innerHTML = transactions.map(txn => `
+                <tr class="border-b border-neutral-800 hover:bg-neutral-900/50 transition">
+                    <td class="px-6 py-4 font-mono font-bold text-neonOrange">${txn.id}</td>
+                    <td class="px-6 py-4 font-medium text-white">${txn.userEmail}</td>
+                    <td class="px-6 py-4">${txn.qty} cotas</td>
+                    <td class="px-6 py-4 font-bold">R$ ${txn.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td class="px-6 py-4"><span class="bg-emerald-500/20 text-emerald-500 px-2.5 py-0.5 rounded-full font-bold">${txn.status}</span></td>
+                    <td class="px-6 py-4 text-neutral-400">${txn.date}</td>
+                </tr>
+            `).join('');
+        }
+
+        function filterSales(query) {
+            const filtered = dbTransactions.filter(t => t.id.toLowerCase().includes(query.toLowerCase()) || t.userEmail.toLowerCase().includes(query.toLowerCase()));
+            renderSalesTable(filtered);
+        }
+
+        function addLuckyNumberField(number = '', prize = '') {
+            const container = document.getElementById('lucky-numbers-inputs-container');
+            const rowId = 'lucky-row-' + Math.random().toString(36).substring(2, 7);
+            const row = document.createElement('div');
+            row.className = "flex items-center space-x-2";
+            row.id = rowId;
+            row.innerHTML = `
+                <input type="text" placeholder="Ex: 0000" value="${number}" class="lucky-num-input bg-cardBg border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white w-28 focus:outline-none focus:border-neonOrange font-mono font-bold">
+                <input type="text" placeholder="Ex: R$ 500,00 no PIX" value="${prize}" class="lucky-prize-input bg-cardBg border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white flex-grow focus:outline-none focus:border-neonOrange">
+                <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-neutral-500 hover:text-red-500 p-2"><i class="fa-solid fa-trash"></i></button>
+            `;
+            container.appendChild(row);
         }
 
         function openNewRaffleModal() {
-            document.getElementById('form-raffle').reset();
-            document.getElementById('edit-raffle-id').value = '';
-            document.getElementById('raffle-modal-title').textContent = 'CRIAR NOVA RIFA';
+            document.getElementById('raffle-modal-title').innerText = "Criar Nova Rifa Oficial";
+            document.getElementById('new-raffle-title').value = "";
+            document.getElementById('new-raffle-total').value = "10000";
+            document.getElementById('new-raffle-price').value = "0.50";
+            document.getElementById('new-raffle-datetime').value = defaultEndDate;
+            document.getElementById('new-raffle-img-file').value = "";
+            document.getElementById('edit-raffle-id').value = "";
+            
+            document.getElementById('lucky-numbers-inputs-container').innerHTML = "";
+            addLuckyNumberField("0000", "R$ 500,00 no PIX");
+            addLuckyNumberField("7777", "R$ 1.000,00 no PIX");
+
             document.getElementById('raffle-modal').classList.remove('hidden');
             document.getElementById('raffle-modal').classList.add('flex');
         }
 
-        function closeNewRaffleModal() {
-            document.getElementById('raffle-modal').classList.add('hidden');
-            document.getElementById('raffle-modal').classList.remove('flex');
+        function openEditRaffleModal() {
+            document.getElementById('raffle-modal-title').innerText = "Editar Rifa Ativa";
+            document.getElementById('new-raffle-title').value = activeRaffle.title;
+            document.getElementById('new-raffle-total').value = activeRaffle.totalTickets;
+            document.getElementById('new-raffle-price').value = activeRaffle.price;
+            document.getElementById('new-raffle-datetime').value = activeRaffle.endTime || defaultEndDate;
+            document.getElementById('edit-raffle-id').value = activeRaffle.id;
+
+            const container = document.getElementById('lucky-numbers-inputs-container');
+            container.innerHTML = "";
+            if (activeRaffle.luckyNumbers && activeRaffle.luckyNumbers.length > 0) {
+                activeRaffle.luckyNumbers.forEach(item => {
+                    addLuckyNumberField(item.number, item.prize);
+                });
+            }
+
+            document.getElementById('raffle-modal').classList.remove('hidden');
+            document.getElementById('raffle-modal').classList.add('flex');
         }
 
-        function handleRaffleFormSubmit(e) {
-            e.preventDefault();
-            const title = document.getElementById('rf-title').value.trim();
-            const price = parseFloat(document.getElementById('rf-price').value);
-            const total = parseInt(document.getElementById('rf-total').value);
-            const image = document.getElementById('rf-image').value.trim();
-            const description = document.getElementById('rf-desc').value.trim();
+        function closeRaffleModal() {
+            document.getElementById('raffle-modal').classList.remove('flex');
+            document.getElementById('raffle-modal').classList.add('hidden');
+        }
 
-            const newR = {
-                id: 'rifa-' + Date.now(),
-                title,
-                price,
-                total,
-                sold: 0,
-                image,
-                description,
-                status: 'Ativa',
-                winner: null
+        function handleSaveRaffleSubmit(e) {
+            e.preventDefault();
+            const title = document.getElementById('new-raffle-title').value;
+            const total = parseInt(document.getElementById('new-raffle-total').value);
+            const price = parseFloat(document.getElementById('new-raffle-price').value);
+            const endTime = document.getElementById('new-raffle-datetime').value;
+            const fileInput = document.getElementById('new-raffle-img-file');
+
+            const numInputs = document.querySelectorAll('.lucky-num-input');
+            const prizeInputs = document.querySelectorAll('.lucky-prize-input');
+            let updatedLuckyNumbers = [];
+            for (let i = 0; i < numInputs.length; i++) {
+                if (numInputs[i].value.trim() !== "") {
+                    updatedLuckyNumbers.push({
+                        number: numInputs[i].value.trim(),
+                        prize: prizeInputs[i].value.trim() || "Prêmio no PIX",
+                        winner: null
+                    });
+                }
+            }
+
+            const updateRaffleData = (imageUrl) => {
+                activeRaffle.title = title;
+                activeRaffle.totalTickets = total;
+                activeRaffle.price = price;
+                activeRaffle.endTime = endTime;
+                activeRaffle.luckyNumbers = updatedLuckyNumbers;
+                activeRaffle.status = "Ativa";
+                if (imageUrl) {
+                    activeRaffle.image = imageUrl;
+                }
+
+                document.getElementById('hero-raffle-title').innerHTML = `${title.toUpperCase()} <span class="text-transparent bg-clip-text bg-gradient-to-r from-neonOrange to-amber-500">OU PIX DE R$ 10.000</span>`;
+                document.getElementById('card-raffle-title').innerText = title;
+                document.getElementById('raffle-image-display').src = activeRaffle.image;
+                document.getElementById('badge-price').innerText = price.toFixed(2).replace('.', ',');
+
+                renderLuckyNumbersGrid();
+                closeRaffleModal();
+                renderAdminData();
+                updatePurchaseLimits();
+                checkRaffleStatusUI();
+                showToast("Rifa salva e agendada com sucesso!", "success");
             };
 
-            raffles.unshift(newR);
-            localStorage.setItem(STORAGE_KEYS.RAFFLES, JSON.stringify(raffles));
-
-            closeNewRaffleModal();
-            renderAdminPanel();
-            renderHomeRaffle();
-            showToast('Nova rifa criada com sucesso!', 'success');
-        }
-
-        function deleteRaffle(id) {
-            if (confirm('Tem certeza que deseja remover esta rifa?')) {
-                raffles = raffles.filter(r => r.id !== id);
-                localStorage.setItem(STORAGE_KEYS.RAFFLES, JSON.stringify(raffles));
-                renderAdminPanel();
-                renderHomeRaffle();
-                showToast('Rifa removida com sucesso.', 'info');
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    updateRaffleData(e.target.result);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                updateRaffleData(null);
             }
         }
 
-        /* --- SORTEIO AUTOMATIZADO --- */
-        function openDrawModal(raffleId) {
-            activeDrawRaffleId = raffleId;
-            const r = raffles.find(item => item.id === raffleId);
-            document.getElementById('draw-raffle-name-sub').textContent = `Sorteando bilhete premiado para: ${r.title}`;
-            document.getElementById('draw-spinner-box').classList.remove('hidden');
-            document.getElementById('draw-winner-result').classList.add('hidden');
-            document.getElementById('btn-execute-draw').disabled = false;
-            document.getElementById('btn-execute-draw').classList.remove('opacity-50');
-
+        function openDrawModal() {
+            document.getElementById('draw-result-box').classList.add('hidden');
+            document.getElementById('btn-execute-draw').classList.remove('hidden');
+            document.getElementById('draw-animation-number').innerText = "#00000";
             document.getElementById('draw-modal').classList.remove('hidden');
             document.getElementById('draw-modal').classList.add('flex');
         }
 
         function closeDrawModal() {
-            document.getElementById('draw-modal').classList.add('hidden');
             document.getElementById('draw-modal').classList.remove('flex');
+            document.getElementById('draw-modal').classList.add('hidden');
         }
 
-        function executeRandomDraw() {
-            const r = raffles.find(item => item.id === activeDrawRaffleId);
-            const raffleSales = sales.filter(s => s.raffleId === activeDrawRaffleId);
-
-            if (raffleSales.length === 0) {
-                showToast('Esta rifa não possui vendas registradas para o sorteio.', 'error');
-                return;
-            }
-
-            document.getElementById('btn-execute-draw').disabled = true;
-            document.getElementById('btn-execute-draw').classList.add('opacity-50');
+        function executeAnimatedDraw() {
+            const btn = document.getElementById('btn-execute-draw');
+            btn.disabled = true;
+            btn.innerText = "SORTEANDO...";
 
             let counter = 0;
-            const interval = setInterval(() => {
+            const animationInterval = setInterval(() => {
                 const randomNum = Math.floor(10000 + Math.random() * 90000);
-                document.getElementById('draw-random-number').textContent = `#${randomNum}`;
+                document.getElementById('draw-animation-number').innerText = `#${randomNum}`;
                 counter++;
 
                 if (counter > 20) {
-                    clearInterval(interval);
+                    clearInterval(animationInterval);
+                    
+                    const winningTicket = "#" + Math.floor(10000 + Math.random() * 90000);
+                    const winningUser = dbTransactions[Math.floor(Math.random() * dbTransactions.length)].userEmail;
+                    
+                    document.getElementById('draw-animation-number').innerText = winningTicket;
+                    document.getElementById('draw-winner-email').innerText = `Ganhador(a): ${winningUser}`;
+                    document.getElementById('draw-result-box').classList.remove('hidden');
+                    btn.classList.add('hidden');
 
-                    // Pick random sale and ticket
-                    const randomSale = raffleSales[Math.floor(Math.random() * raffleSales.length)];
-                    const randomTicket = randomSale.numbers[Math.floor(Math.random() * randomSale.numbers.length)];
+                    activeRaffle.status = "Finalizada";
+                    activeRaffle.winner = { ticket: winningTicket, user: winningUser };
 
-                    r.winner = {
-                        name: randomSale.userName,
-                        email: randomSale.userEmail,
-                        ticket: randomTicket
-                    };
-                    localStorage.setItem(STORAGE_KEYS.RAFFLES, JSON.stringify(raffles));
+                    dbWinners.unshift({
+                        id: dbWinners.length + 1,
+                        type: "main",
+                        title: activeRaffle.title,
+                        ticket: winningTicket,
+                        user: winningUser,
+                        date: new Date().toLocaleDateString('pt-BR'),
+                        raffleTitle: activeRaffle.title
+                    });
 
-                    document.getElementById('draw-spinner-box').classList.add('hidden');
-                    document.getElementById('draw-winner-result').classList.remove('hidden');
-                    document.getElementById('winner-name-txt').textContent = randomSale.userName;
-                    document.getElementById('winner-ticket-txt').textContent = `Bilhete Sorteado: #${randomTicket}`;
-                    document.getElementById('winner-email-txt').textContent = randomSale.userEmail;
-
-                    renderAdminPanel();
-                    showToast('Ganhador sorteado com sucesso!', 'success');
+                    renderWinnersGrid('all');
+                    renderAdminData();
+                    checkRaffleStatusUI();
+                    showToast("Sorteio realizado e rifa finalizada com sucesso!", "success");
                 }
             }, 100);
-        }
-
-        /* --- COUNTDOWN TIMER --- */
-        function startCountdown() {
-            let totalSeconds = 5 * 24 * 60 * 60 + 14 * 60 * 60 + 32 * 60 + 45;
-            setInterval(() => {
-                if (totalSeconds > 0) totalSeconds--;
-                const days = Math.floor(totalSeconds / (3600 * 24));
-                const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
-                const mins = Math.floor((totalSeconds % 3600) / 60);
-                const secs = totalSeconds % 60;
-
-                const dEl = document.getElementById('timer-days');
-                const hEl = document.getElementById('timer-hours');
-                const mEl = document.getElementById('timer-mins');
-                const sEl = document.getElementById('timer-secs');
-
-                if (dEl) dEl.textContent = String(days).padStart(2, '0');
-                if (hEl) hEl.textContent = String(hours).padStart(2, '0');
-                if (mEl) mEl.textContent = String(mins).padStart(2, '0');
-                if (sEl) sEl.textContent = String(secs).padStart(2, '0');
-            }, 1000);
-        }
-
-        /* --- TOAST NOTIFICATIONS --- */
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            
-            let borderColor = 'border-neonOrange';
-            let icon = 'fa-circle-check text-neonOrange';
-            if (type === 'error') {
-                borderColor = 'border-red-500';
-                icon = 'fa-circle-exclamation text-red-500';
-            } else if (type === 'info') {
-                borderColor = 'border-amber-500';
-                icon = 'fa-circle-info text-amber-500';
-            }
-
-            toast.className = `bg-cardBg border ${borderColor} text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 text-xs font-bold transition transform translate-y-2 opacity-0 animate-fade-in`;
-            toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i><span>${message}</span>`;
-            
-            container.appendChild(toast);
-            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 50);
-
-            setTimeout(() => {
-                toast.classList.add('translate-y-2', 'opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
         }
     </script>
 </body>
